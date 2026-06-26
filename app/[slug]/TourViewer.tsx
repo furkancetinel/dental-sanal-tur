@@ -20,12 +20,12 @@ function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: num
 }
 
 const TIP_ROTATION: Record<string, string> = {
-  ilerleme: "rotate(0deg)",    // sağa →
-  ileri:    "rotate(-90deg)",  // yukarı ↑
-  geri:     "rotate(90deg)",   // aşağı ↓
-  kapi:     "rotate(0deg)",    // sağa →
-  yukari:   "rotate(-90deg)",  // yukarı ↑
-  asagi:    "rotate(90deg)",   // aşağı ↓
+  ilerleme: "rotate(0deg)",    // yukarı ↑ (ileri)
+  ileri:    "rotate(0deg)",    // yukarı ↑
+  geri:     "rotate(180deg)",  // aşağı ↓
+  kapi:     "rotate(0deg)",    // yukarı ↑
+  yukari:   "rotate(0deg)",    // yukarı ↑
+  asagi:    "rotate(180deg)",  // aşağı ↓
 };
 
 export default function TourViewer({ config }: Props) {
@@ -246,23 +246,24 @@ export default function TourViewer({ config }: Props) {
                       {h.baslik}
                     </div>
                   )}
-                  {/* Hotspot — çift ok, yöne döner, siyah arka plan yok */}
+                  {/* Hotspot — çift ok dikey, uca doğru */}
                   <div
                     className="flex flex-col items-center cursor-pointer"
                     style={{
                       transform: TIP_ROTATION[tip] || "rotate(0deg)",
-                      filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
+                      filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.7))",
+                      gap: 0,
                     }}
                   >
-                    <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    <svg width="40" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
                       style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="4 14 14 4 24 14" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+                      <polyline points="6 22 20 6 34 22" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
                     </svg>
-                    <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginTop: -6, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
+                    <svg width="40" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginTop: -10, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="4 14 14 4 24 14" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <polyline points="6 22 20 6 34 22" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                 </div>
@@ -303,12 +304,12 @@ export default function TourViewer({ config }: Props) {
 
       <style>{`
         @keyframes hs-arrow-1 {
-          0%, 100% { opacity: 0.25; transform: translateY(0px); }
-          50% { opacity: 0.6; transform: translateY(-3px); }
+          0%, 100% { opacity: 0.2; transform: translateY(4px); }
+          50% { opacity: 0.5; transform: translateY(0px); }
         }
         @keyframes hs-arrow-2 {
-          0%, 100% { opacity: 0.8; transform: translateY(0px); }
-          50% { opacity: 1; transform: translateY(-3px); }
+          0%, 100% { opacity: 0.7; transform: translateY(4px); }
+          50% { opacity: 1; transform: translateY(0px); }
         }
         .pnlm-load-box { display: none !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
