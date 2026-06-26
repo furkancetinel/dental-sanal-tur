@@ -19,22 +19,13 @@ function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: num
   return { x, y, visible };
 }
 
-const TIP_ICONS: Record<string, string> = {
-  ilerleme: "→",
-  ileri: "↑",
-  geri: "↓",
-  kapi: "🚪",
-  yukari: "↑",
-  asagi: "↓",
-};
-
-const TIP_SVG: Record<string, string> = {
-  ilerleme: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
-  ileri:    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`,
-  geri:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
-  kapi:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="18" height="20" rx="1"/><path d="M9 2v20"/><circle cx="15" cy="12" r="1" fill="white"/></svg>`,
-  yukari:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`,
-  asagi:    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+const TIP_ROTATION: Record<string, string> = {
+  ilerleme: "rotate(0deg)",    // sağa →
+  ileri:    "rotate(-90deg)",  // yukarı ↑
+  geri:     "rotate(90deg)",   // aşağı ↓
+  kapi:     "rotate(0deg)",    // sağa →
+  yukari:   "rotate(-90deg)",  // yukarı ↑
+  asagi:    "rotate(90deg)",   // aşağı ↓
 };
 
 export default function TourViewer({ config }: Props) {
@@ -255,18 +246,25 @@ export default function TourViewer({ config }: Props) {
                       {h.baslik}
                     </div>
                   )}
-                  {/* Hotspot butonu */}
+                  {/* Hotspot — çift ok, yöne döner, siyah arka plan yok */}
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                    className="flex flex-col items-center cursor-pointer"
                     style={{
-                      background: "rgba(255,255,255,0.15)",
-                      border: "2px solid rgba(255,255,255,0.8)",
-                      backdropFilter: "blur(4px)",
-                      boxShadow: "0 2px 16px rgba(0,0,0,0.3)",
-                      animation: "hs-pulse 2.5s ease-in-out infinite",
+                      transform: TIP_ROTATION[tip] || "rotate(0deg)",
+                      filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
                     }}
-                    dangerouslySetInnerHTML={{ __html: TIP_SVG[tip] || TIP_SVG.ilerleme }}
-                  />
+                  >
+                    <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
+                    >
+                      <polyline points="4 14 14 4 24 14" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+                    </svg>
+                    <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginTop: -6, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
+                    >
+                      <polyline points="4 14 14 4 24 14" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </div>
               );
             })}
@@ -304,9 +302,13 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <style>{`
-        @keyframes hs-pulse {
-          0%, 100% { box-shadow: 0 2px 16px rgba(0,0,0,0.3), 0 0 0 0 rgba(255,255,255,0.3); }
-          50% { box-shadow: 0 2px 16px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0); }
+        @keyframes hs-arrow-1 {
+          0%, 100% { opacity: 0.25; transform: translateY(0px); }
+          50% { opacity: 0.6; transform: translateY(-3px); }
+        }
+        @keyframes hs-arrow-2 {
+          0%, 100% { opacity: 0.8; transform: translateY(0px); }
+          50% { opacity: 1; transform: translateY(-3px); }
         }
         .pnlm-load-box { display: none !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
