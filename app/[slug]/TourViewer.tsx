@@ -73,10 +73,11 @@ export default function TourViewer({ config }: Props) {
         type: "custom",
         text: h.baslik,
         cssClass: `pnlm-hs pnlm-hs-${h.tip || "ilerleme"}`,
-        clickHandlerFunc: () => {
-          const hedef = config.odalar.find((o) => o.id === h.hedef);
+        clickHandlerFunc: (e: any, args: any) => {
+          const hedef = config.odalar.find((o) => o.id === args.hedefId);
           if (hedef) goRoom(hedef);
         },
+        clickHandlerArgs: { hedefId: h.hedef },
       })),
     });
 
@@ -172,12 +173,10 @@ export default function TourViewer({ config }: Props) {
 
         {/* Viewer */}
         <div className="flex-1 relative">
-      {/* Turuncu360 logo — panorama sağ üst */}
-      {!loading && (
-        <div className="absolute top-4 right-4 z-10 pointer-events-none">
-          <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-7 w-auto opacity-80" />
-        </div>
-      )}
+      {/* Turuncu360 logo — sol alt */}
+      <div className="absolute bottom-4 left-4 z-10 pointer-events-none">
+        <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-7 w-auto opacity-75" />
+      </div>
 
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
