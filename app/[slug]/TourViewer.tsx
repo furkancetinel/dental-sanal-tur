@@ -7,14 +7,7 @@ interface Props {
   config: TourConfig;
 }
 
-const ICON_MAP: Record<string, string> = {
-  tooth: "🦷",
-  armchair: "🪑",
-  route: "🚶",
-  "shield-check": "🛡️",
-  scan: "📡",
-  coffee: "☕",
-};
+
 
 export default function TourViewer({ config }: Props) {
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -122,42 +115,40 @@ export default function TourViewer({ config }: Props) {
           <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full font-medium">
             360° Sanal Tur
           </span>
-          {config.telefon && (
-            <a
-              href={`tel:${config.telefon}`}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 hidden sm:block"
-            >
-              {config.telefon}
-            </a>
-          )}
         </div>
       </div>
 
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-52 bg-white border-r border-gray-100 flex flex-col overflow-y-auto flex-shrink-0">
-          {Object.entries(kategoriler).map(([kat, odalar]) => (
-            <div key={kat}>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">
-                {kat}
-              </p>
-              {odalar.map((oda) => (
-                <button
-                  key={oda.id}
-                  onClick={() => goRoom(oda)}
-                  className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-all ${
-                    activeOda.id === oda.id
-                      ? "bg-blue-600 text-white font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-                >
-                  <span className="text-base leading-none">{ICON_MAP[oda.ikon] || "📍"}</span>
-                  <span className="truncate">{oda.baslik}</span>
-                </button>
-              ))}
-            </div>
-          ))}
+        <div className="w-52 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
+          <div className="flex-1 overflow-y-auto">
+            {Object.entries(kategoriler).map(([kat, odalar]) => (
+              <div key={kat}>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">
+                  {kat}
+                </p>
+                {odalar.map((oda) => (
+                  <button
+                    key={oda.id}
+                    onClick={() => goRoom(oda)}
+                    className={`w-full flex items-center px-4 py-2.5 text-left text-sm transition-all ${
+                      activeOda.id === oda.id
+                        ? "text-white font-medium"
+                        : "text-gray-600 hover:bg-orange-50 hover:text-gray-900"
+                    }`}
+                    style={activeOda.id === oda.id ? { background: "#f0851b" } : {}}
+                  >
+                    <span className="truncate">{oda.baslik}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+          {/* Turuncu360 logo */}
+          <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-center">
+            <img src="/turuncu360-logo.svg" alt="Turuncu360" className="h-6 w-auto opacity-80" />
+          </div>
         </div>
 
         {/* Viewer */}
@@ -165,7 +156,7 @@ export default function TourViewer({ config }: Props) {
           {loading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-900">
               <div className="text-center">
-                <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: "#f0851b", borderTopColor: "transparent" }} />
                 <p className="text-white text-sm font-medium">{activeOda.baslik}</p>
                 <p className="text-gray-400 text-xs mt-1">Yükleniyor...</p>
               </div>
@@ -191,7 +182,7 @@ export default function TourViewer({ config }: Props) {
         .pnlm-hotspot-custom {
           width: 36px !important;
           height: 36px !important;
-          background: rgba(37,99,235,0.9) !important;
+          background: rgba(240,133,27,0.9) !important;
           border: 2px solid rgba(255,255,255,0.8) !important;
           border-radius: 50% !important;
           cursor: pointer !important;
@@ -202,11 +193,11 @@ export default function TourViewer({ config }: Props) {
           animation: pnlm-pulse 2.5s infinite !important;
           margin: -18px 0 0 -18px !important;
         }
-        .pnlm-hotspot-custom:hover { background: rgba(29,78,216,1) !important; transform: scale(1.2) !important; }
+        .pnlm-hotspot-custom:hover { background: rgba(200,100,10,1) !important; transform: scale(1.2) !important; }
         .pnlm-tooltip { font-family: Poppins, sans-serif !important; font-size: 12px !important; }
         @keyframes pnlm-pulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.5); }
-          50% { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(240,133,27,0.5); }
+          50% { box-shadow: 0 0 0 8px rgba(240,133,27,0); }
         }
         .pnlm-load-box { font-family: Poppins, sans-serif !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
