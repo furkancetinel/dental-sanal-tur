@@ -209,77 +209,69 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <style>{`
-        /* Tüm hotspot tipleri için ortak stil */
+        /* Tüm hotspot tipleri için ortak stil — şeffaf, sadece beyaz ok */
         .pnlm-hs {
-          width: 44px !important; height: 44px !important;
+          width: 48px !important; height: 48px !important;
           border-radius: 50% !important; cursor: pointer !important;
-          margin: -22px 0 0 -22px !important;
+          margin: -24px 0 0 -24px !important;
           display: flex !important; align-items: center !important; justify-content: center !important;
-          border: 2.5px solid rgba(255,255,255,0.85) !important;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
           transition: transform 0.15s !important;
-          background: rgba(240,133,27,0.92) !important;
         }
-        .pnlm-hs:hover { transform: scale(1.2) !important; background: #d4700f !important; }
+        .pnlm-hs:hover { transform: scale(1.2) !important; }
 
-        /* Kapı ikonu — farklı renk */
-        .pnlm-hs-kapi { background: rgba(30,80,180,0.92) !important; }
-        .pnlm-hs-kapi:hover { background: rgba(20,60,150,1) !important; }
-
-        /* Geri ikonu */
-        .pnlm-hs-geri { background: rgba(100,100,100,0.85) !important; }
-        .pnlm-hs-geri:hover { background: rgba(70,70,70,1) !important; }
-
-        /* SVG ikonları inject et */
+        /* SVG ikonları */
         .pnlm-hs::after {
           content: "" !important;
           display: block !important;
-          width: 20px !important; height: 20px !important;
+          width: 36px !important; height: 36px !important;
           background-size: contain !important;
           background-repeat: no-repeat !important;
           background-position: center !important;
-          filter: brightness(0) invert(1) !important;
+          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)) !important;
         }
 
         /* İlerleme - sağ ok */
         .pnlm-hs-ilerleme::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='10 8 14 12 10 16'/%3E%3C/svg%3E") !important;
         }
         /* İleri - yukarı ok */
         .pnlm-hs-ileri::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 19V5M5 12l7-7 7 7'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 14 12 10 16 14'/%3E%3C/svg%3E") !important;
         }
         /* Geri - aşağı ok */
         .pnlm-hs-geri::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 5v14M5 12l7 7 7-7'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 10 12 14 16 10'/%3E%3C/svg%3E") !important;
         }
         /* Kapı */
         .pnlm-hs-kapi::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3Ccircle cx='14' cy='12' r='1' fill='white'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Crect x='8' y='6' width='8' height='12' rx='1'/%3E%3Ccircle cx='14' cy='12' r='0.8' fill='white'/%3E%3C/svg%3E") !important;
         }
         /* Yukarı */
         .pnlm-hs-yukari::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='18 15 12 9 6 15'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 14 12 10 16 14'/%3E%3C/svg%3E") !important;
         }
         /* Aşağı */
         .pnlm-hs-asagi::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 10 12 14 16 10'/%3E%3C/svg%3E") !important;
         }
 
-        /* Pulse animasyonu */
+        /* Pulse — sadece dış halka, no fill */
         @keyframes hs-pulse {
-          0%,100% { box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 0 0 rgba(240,133,27,0.5); }
-          50% { box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 0 10px rgba(240,133,27,0); }
+          0%,100% { filter: drop-shadow(0 0 0px rgba(255,255,255,0)); }
+          50% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
         }
-        .pnlm-hs { animation: hs-pulse 2.5s infinite !important; }
-        .pnlm-hs-kapi { animation: none !important; }
+        .pnlm-hs::after { animation: hs-pulse 2.5s infinite !important; }
 
-        .pnlm-tooltip { font-family: Poppins, sans-serif !important; font-size: 12px !important; font-weight: 500 !important; border-radius: 8px !important; padding: 5px 12px !important; }
+        .pnlm-tooltip { font-family: Poppins, sans-serif !important; font-size: 12px !important; font-weight: 500 !important; border-radius: 8px !important; padding: 5px 12px !important; background: rgba(0,0,0,0.7) !important; }
         .pnlm-load-box { display: none !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
 
         @media (max-width: 767px) {
-          .pnlm-hs { width: 50px !important; height: 50px !important; margin: -25px 0 0 -25px !important; }
+          .pnlm-hs { width: 54px !important; height: 54px !important; margin: -27px 0 0 -27px !important; }
+          .pnlm-hs::after { width: 42px !important; height: 42px !important; }
         }
       `}</style>
     </div>

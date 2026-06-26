@@ -65,7 +65,13 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
 
   function initViewer(startYaw: number, startPitch: number, startHfov: number) {
     if (!viewerRef.current) return;
-    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+    if (pannellumRef.current) {
+      if ((pannellumRef.current as any)._clickHandler) {
+        (pannellumRef.current as any)._container?.removeEventListener("click", (pannellumRef.current as any)._clickHandler);
+      }
+      try { pannellumRef.current.destroy(); } catch {}
+      pannellumRef.current = null;
+    }
 
     pannellumRef.current = (window as any).pannellum.viewer(viewerRef.current, {
       type: "equirectangular",
@@ -82,42 +88,44 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
       hotSpots: buildHotspotDefs(hotspotlar),
     });
 
-    // DOM click listener — pannellum mouseup event coords güvenilir değil
-    const container = viewerRef.current;
+    let mouseDownPos = { x: 0, y: 0 };
+
+    const mouseDownHandler = (e: MouseEvent) => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+    };
+
     const clickHandler = (e: MouseEvent) => {
       if (modeRef.current !== "add") return;
       if (!pannellumRef.current) return;
-      // Tıklanan pozisyonu pannellum koordinatlarına çevir
+      // Sürükleme ile tıklamayı ayırt et
+      const dx = Math.abs(e.clientX - mouseDownPos.x);
+      const dy = Math.abs(e.clientY - mouseDownPos.y);
+      if (dx > 5 || dy > 5) return;
+
+      const container = viewerRef.current!;
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      try {
-        const coords = pannellumRef.current.mouseEventToCoords(e);
-        if (coords) {
-          setPending({
-            yaw: Math.round(coords[1] * 10) / 10,
-            pitch: Math.round(coords[0] * 10) / 10,
-          });
-        }
-      } catch {
-        // mouseEventToCoords yoksa manuel hesapla
-        const pitch = pannellumRef.current.getPitch();
-        const yaw = pannellumRef.current.getYaw();
-        const hfov = pannellumRef.current.getHfov();
-        const w = rect.width;
-        const h = rect.height;
-        const dx = (x / w - 0.5) * hfov;
-        const dy = -(y / h - 0.5) * hfov * (h / w);
-        setPending({
-          yaw: Math.round((yaw + dx) * 10) / 10,
-          pitch: Math.round((pitch + dy) * 10) / 10,
-        });
-      }
+      const px = (e.clientX - rect.left) / rect.width;   // 0-1
+      const py = (e.clientY - rect.top) / rect.height;    // 0-1
+
+      const curYaw = pannellumRef.current.getYaw();
+      const curPitch = pannellumRef.current.getPitch();
+      const hfov = pannellumRef.current.getHfov();
+      const vfov = hfov * (rect.height / rect.width);
+
+      const clickYaw   = curYaw   + (px - 0.5) * hfov;
+      const clickPitch = curPitch - (py - 0.5) * vfov;
+
+      setPending({
+        yaw:   Math.round(clickYaw   * 10) / 10,
+        pitch: Math.round(clickPitch * 10) / 10,
+      });
     };
 
+    const container = viewerRef.current;
+    container.addEventListener("mousedown", mouseDownHandler);
     container.addEventListener("click", clickHandler);
-    // Cleanup için ref'e kaydet
     (pannellumRef.current as any)._clickHandler = clickHandler;
+    (pannellumRef.current as any)._mouseDownHandler = mouseDownHandler;
     (pannellumRef.current as any)._container = container;
   }
 
@@ -126,9 +134,9 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
     const curYaw = pannellumRef.current.getYaw();
     const curPitch = pannellumRef.current.getPitch();
     const curHfov = pannellumRef.current.getHfov();
-    // Eski click listener'ı temizle
     if ((pannellumRef.current as any)._clickHandler) {
       (pannellumRef.current as any)._container?.removeEventListener("click", (pannellumRef.current as any)._clickHandler);
+      (pannellumRef.current as any)._container?.removeEventListener("mousedown", (pannellumRef.current as any)._mouseDownHandler);
     }
     initViewer(curYaw, curPitch, curHfov);
   }
