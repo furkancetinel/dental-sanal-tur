@@ -2,6 +2,15 @@
 import { useState, useRef } from "react";
 import { TourConfig, Oda, Hotspot } from "../types";
 import HotspotEditor from "./HotspotEditor";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Props { initialKlinikler: TourConfig[] }
 
@@ -178,6 +187,34 @@ export default function AdminClient({ initialKlinikler }: Props) {
       flash("Kaydedildi ✓");
     } catch {
       flash("Kayıt hatası", "error");
+    }
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  async function odaSirala(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !aktifFirma) return;
+    const eskiSira = aktifFirma.odalar.map(o => o.id);
+    const eskiIdx = eskiSira.indexOf(active.id as string);
+    const yeniIdx = eskiSira.indexOf(over.id as string);
+    const yeniSira = arrayMove(eskiSira, eskiIdx, yeniIdx);
+    // Optimistik güncelleme
+    const yeniOdalar = arrayMove(aktifFirma.odalar, eskiIdx, yeniIdx);
+    setAktifFirma({ ...aktifFirma, odalar: yeniOdalar });
+    try {
+      await fetch("/api/admin/oda/sirala", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ klinikId: aktifFirma.id, odaIdleri: yeniSira }),
+      });
+      flash("Sıralama kaydedildi ✓");
+    } catch {
+      flash("Sıralama hatası", "error");
+      await fetchFirmalar(aktifFirma.id);
     }
   }
 
@@ -369,135 +406,37 @@ export default function AdminClient({ initialKlinikler }: Props) {
                 </div>
               )}
 
-              <div className="grid gap-4">
-                {aktifFirma.odalar.map((oda) => (
-                  <div key={oda.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="flex items-start gap-4 p-4">
-                      {/* Thumbnail */}
-                      <div
-                        className="w-36 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative cursor-pointer group"
-                        onClick={() => { uploadOdaIdRef.current = oda.id; fileInputRef.current?.click(); }}
-                        title="Tıkla: fotoğraf yükle / değiştir"
-                      >
-                        {oda.foto ? (
-                          <img src={oda.foto} alt={oda.baslik} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-1">
-                            <span className="text-2xl">📷</span>
-                            <span className="text-xs">Fotoğraf yükle</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">Değiştir</span>
-                        </div>
-                        {uploadingOda === oda.id && (
-                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f0851b", borderTopColor: "transparent" }} />
-                          </div>
-                        )}
-                      </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={odaSirala}>
+                <SortableContext items={aktifFirma.odalar.map(o => o.id)} strategy={verticalListSortingStrategy}>
+                  <div className="grid gap-4">
+                    {aktifFirma.odalar.map((oda) => (
+                      <SortableOdaKart
+                        key={oda.id}
+                        oda={oda}
+                        editingOdaId={editingOdaId}
+                        editForm={editForm}
+                        setEditForm={setEditForm}
+                        setEditingOdaId={setEditingOdaId}
+                        uploadingOda={uploadingOda}
+                        firmalar={firmalar}
+                        onDuzenle={odaDuzenle}
+                        onSil={odaSil}
+                        onFotoClick={() => { uploadOdaIdRef.current = oda.id; fileInputRef.current?.click(); }}
+                        onHotspot={() => setHotspotEditorOda(oda)}
+                        KATEGORI_ONERILERI={KATEGORI_ONERILERI}
+                        ACIKLAMA_ONERILERI={ACIKLAMA_ONERILERI}
+                        saving={saving}
+                      />
+                    ))}
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        {editingOdaId === oda.id ? (
-                          /* Düzenleme modu */
-                          <div>
-                            <input
-                              className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none"
-                              placeholder="Oda adı *"
-                              value={editForm.baslik}
-                              onChange={(e) => setEditForm({ ...editForm, baslik: e.target.value })}
-                              onKeyDown={(e) => e.key === "Enter" && odaDuzenle(oda)}
-                              autoFocus
-                            />
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              <div>
-                                <input
-                                  list="edit-kategori-list"
-                                  className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none"
-                                  placeholder="Kategori"
-                                  value={editForm.kategori}
-                                  onChange={(e) => setEditForm({ ...editForm, kategori: e.target.value })}
-                                />
-                                <datalist id="edit-kategori-list">
-                                  {[...KATEGORI_ONERILERI, ...firmalar.flatMap(k => k.odalar.map(o => o.kategori))]
-                                    .filter((v, i, a) => v && a.indexOf(v) === i).map(k => <option key={k} value={k} />)}
-                                </datalist>
-                              </div>
-                              <div>
-                                <input
-                                  list="edit-aciklama-list"
-                                  className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none"
-                                  placeholder="Açıklama"
-                                  value={editForm.aciklama}
-                                  onChange={(e) => setEditForm({ ...editForm, aciklama: e.target.value })}
-                                />
-                                <datalist id="edit-aciklama-list">
-                                  {[...ACIKLAMA_ONERILERI, ...firmalar.flatMap(k => k.odalar.map(o => o.aciklama))]
-                                    .filter((v, i, a) => v && a.indexOf(v) === i).map(k => <option key={k} value={k} />)}
-                                </datalist>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => odaDuzenle(oda)} disabled={saving} className="px-3 py-1.5 rounded-lg text-white text-xs font-medium disabled:opacity-50" style={{ background: "#f0851b" }}>
-                                {saving ? "..." : "Kaydet"}
-                              </button>
-                              <button onClick={() => setEditingOdaId(null)} className="px-3 py-1.5 rounded-lg text-gray-500 text-xs border border-gray-200">İptal</button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Görüntüleme modu */
-                          <div>
-                            <div className="flex items-start justify-between">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-gray-900 text-sm truncate">{oda.baslik}</p>
-                                <p className="text-xs text-gray-400">{oda.kategori}{oda.aciklama ? ` · ${oda.aciklama}` : ""}</p>
-                                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                  <span className="text-xs text-gray-300">Yaw: {oda.baslangicYaw ?? 0}°</span>
-                                  <span className="text-xs text-gray-300">Pitch: {oda.baslangicPitch ?? 0}°</span>
-                                  <span className="text-xs text-gray-300">Zoom: {(oda as any).baslangicHfov ?? 100}°</span>
-                                  <span className="text-xs text-gray-300">{oda.hotspotlar.length} hotspot</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                <button
-                                  onClick={() => { setEditingOdaId(oda.id); setEditForm({ baslik: oda.baslik, kategori: oda.kategori, aciklama: oda.aciklama }); }}
-                                  className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100"
-                                  title="Düzenle"
-                                >✏️</button>
-                                <button onClick={() => odaSil(oda.id)} className="text-gray-300 hover:text-red-400 text-sm px-1" title="Sil">✕</button>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-3 flex-wrap">
-                              <button
-                                onClick={() => { uploadOdaIdRef.current = oda.id; fileInputRef.current?.click(); }}
-                                className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                              >
-                                📷 {oda.foto ? "Fotoğrafı Değiştir" : "Fotoğraf Yükle"}
-                              </button>
-                              <button
-                                onClick={() => setHotspotEditorOda(oda)}
-                                disabled={!oda.foto}
-                                className="text-xs px-3 py-1.5 rounded-lg text-white font-medium disabled:opacity-40 transition-opacity"
-                                style={{ background: "#f0851b" }}
-                              >
-                                🎯 Hotspot & Kamera ({oda.hotspotlar.length})
-                              </button>
-                            </div>
-                            {!oda.foto && <p className="text-xs mt-1" style={{ color: "#f0851b" }}>Fotoğraf yükleyince hotspot editörü açılır</p>}
-                          </div>
-                        )}
+                    {aktifFirma.odalar.length === 0 && (
+                      <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
+                        Henüz oda eklenmemiş. Yukarıdan ekleyin.
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
-
-                {aktifFirma.odalar.length === 0 && (
-                  <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
-                    Henüz oda eklenmemiş. Yukarıdan ekleyin.
-                  </div>
-                )}
-              </div>
+                </SortableContext>
+              </DndContext>
             </>
           )}
         </div>
@@ -527,6 +466,117 @@ export default function AdminClient({ initialKlinikler }: Props) {
           onClose={() => setHotspotEditorOda(null)}
         />
       )}
+    </div>
+  );
+}
+
+// Sürüklenebilir oda kartı
+function SortableOdaKart({ oda, editingOdaId, editForm, setEditForm, setEditingOdaId, uploadingOda, firmalar, onDuzenle, onSil, onFotoClick, onHotspot, KATEGORI_ONERILERI, ACIKLAMA_ONERILERI, saving }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: oda.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="flex items-start gap-3 p-4">
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 flex flex-col gap-1 cursor-grab active:cursor-grabbing pt-1 px-1 text-gray-300 hover:text-gray-500"
+          title="Sürükleyerek sırala"
+        >
+          <div className="w-4 h-0.5 bg-current rounded" />
+          <div className="w-4 h-0.5 bg-current rounded" />
+          <div className="w-4 h-0.5 bg-current rounded" />
+        </div>
+
+        {/* Thumbnail */}
+        <div
+          className="w-32 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative cursor-pointer group"
+          onClick={onFotoClick}
+          title="Tıkla: fotoğraf yükle / değiştir"
+        >
+          {oda.foto ? (
+            <img src={oda.foto} alt={oda.baslik} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-1">
+              <span className="text-2xl">📷</span>
+              <span className="text-xs">Yükle</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white text-xs font-medium">Değiştir</span>
+          </div>
+          {uploadingOda === oda.id && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f0851b", borderTopColor: "transparent" }} />
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          {editingOdaId === oda.id ? (
+            <div>
+              <input
+                className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-sm mb-2 focus:outline-none"
+                placeholder="Oda adı *"
+                value={editForm.baslik}
+                onChange={(e: any) => setEditForm({ ...editForm, baslik: e.target.value })}
+                onKeyDown={(e: any) => e.key === "Enter" && onDuzenle(oda)}
+                autoFocus
+              />
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <input list="edit-kategori-list" className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none" placeholder="Kategori" value={editForm.kategori} onChange={(e: any) => setEditForm({ ...editForm, kategori: e.target.value })} />
+                  <datalist id="edit-kategori-list">{[...KATEGORI_ONERILERI, ...firmalar.flatMap((k: any) => k.odalar.map((o: any) => o.kategori))].filter((v: any, i: any, a: any) => v && a.indexOf(v) === i).map((k: any) => <option key={k} value={k} />)}</datalist>
+                </div>
+                <div>
+                  <input list="edit-aciklama-list" className="w-full border border-orange-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none" placeholder="Açıklama" value={editForm.aciklama} onChange={(e: any) => setEditForm({ ...editForm, aciklama: e.target.value })} />
+                  <datalist id="edit-aciklama-list">{[...ACIKLAMA_ONERILERI, ...firmalar.flatMap((k: any) => k.odalar.map((o: any) => o.aciklama))].filter((v: any, i: any, a: any) => v && a.indexOf(v) === i).map((k: any) => <option key={k} value={k} />)}</datalist>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => onDuzenle(oda)} disabled={saving} className="px-3 py-1.5 rounded-lg text-white text-xs font-medium disabled:opacity-50" style={{ background: "#f0851b" }}>{saving ? "..." : "Kaydet"}</button>
+                <button onClick={() => setEditingOdaId(null)} className="px-3 py-1.5 rounded-lg text-gray-500 text-xs border border-gray-200">İptal</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-start justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-900 text-sm truncate">{oda.baslik}</p>
+                  <p className="text-xs text-gray-400">{oda.kategori}{oda.aciklama ? ` · ${oda.aciklama}` : ""}</p>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <span className="text-xs text-gray-300">Yaw: {oda.baslangicYaw ?? 0}°</span>
+                    <span className="text-xs text-gray-300">Pitch: {oda.baslangicPitch ?? 0}°</span>
+                    <span className="text-xs text-gray-300">Zoom: {oda.baslangicHfov ?? 100}°</span>
+                    <span className="text-xs text-gray-300">{oda.hotspotlar.length} hotspot</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                  <button onClick={() => { setEditingOdaId(oda.id); setEditForm({ baslik: oda.baslik, kategori: oda.kategori, aciklama: oda.aciklama }); }} className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100">Düzenle</button>
+                  <button onClick={() => onSil(oda.id)} className="text-gray-300 hover:text-red-400 text-sm px-1">✕</button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <button onClick={onFotoClick} className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  📷 {oda.foto ? "Fotoğrafı Değiştir" : "Fotoğraf Yükle"}
+                </button>
+                <button onClick={onHotspot} disabled={!oda.foto} className="text-xs px-3 py-1.5 rounded-lg text-white font-medium disabled:opacity-40" style={{ background: "#f0851b" }}>
+                  🎯 Hotspot & Kamera ({oda.hotspotlar.length})
+                </button>
+              </div>
+              {!oda.foto && <p className="text-xs mt-1" style={{ color: "#f0851b" }}>Fotoğraf yükleyince hotspot editörü açılır</p>}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
