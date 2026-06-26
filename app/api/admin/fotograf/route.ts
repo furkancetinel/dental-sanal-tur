@@ -4,8 +4,6 @@ import { getKlinik, saveKlinik } from "@/lib/config";
 import path from "path";
 import fs from "fs";
 
-export const config = { api: { bodyParser: false } };
-
 export async function POST(req: NextRequest) {
   if (!await isAuthenticated()) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
 

@@ -1,12 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { TourConfig } from "../types";
 import TourViewer from "./TourViewer";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
+
+const RESERVED = ["admin", "api", "_next", "favicon.ico"];
 
 function getConfig(slug: string): TourConfig | null {
   try {
@@ -28,6 +30,10 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function TourPage({ params }: Props) {
   const { slug } = await params;
+  
+  // Reserved route'ları [slug]'ın yakalamasını engelle
+  if (RESERVED.includes(slug)) redirect("/");
+  
   const config = getConfig(slug);
   if (!config) notFound();
   return <TourViewer config={config} />;
