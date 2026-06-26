@@ -16,160 +16,251 @@ const IKONLAR = [
 ];
 
 export default function AdminClient({ initialKlinikler }: Props) {
-  const [klinikler, setKlinikler] = useState<TourConfig[]>(initialKlinikler);
-  const [aktifKlinik, setAktifKlinik] = useState<TourConfig | null>(klinikler[0] || null);
+  const [firmalar, setFirmalar] = useState<TourConfig[]>(initialKlinikler);
+  const [aktifFirma, setAktifFirma] = useState<TourConfig | null>(initialKlinikler[0] || null);
   const [hotspotEditorOda, setHotspotEditorOda] = useState<Oda | null>(null);
-  const [yeniKlinikForm, setYeniKlinikForm] = useState(false);
+  const [yeniFirmaForm, setYeniFirmaForm] = useState(false);
   const [yeniOdaForm, setYeniOdaForm] = useState(false);
   const [uploadingOda, setUploadingOda] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadOdaRef = useRef<string>("");
+  const uploadOdaIdRef = useRef<string>("");
 
-  const [klinikForm, setKlinikForm] = useState({ klinikAdi: "", logo: "", website: "", telefon: "" });
+  const [firmaForm, setFirmaForm] = useState({ klinikAdi: "", logo: "", website: "", telefon: "" });
   const [odaForm, setOdaForm] = useState({ baslik: "", kategori: "Klinikler", aciklama: "", ikon: "tooth" });
 
-  function flash(text: string) { setMsg(text); setTimeout(() => setMsg(""), 3000); }
+  function flash(text: string, type: "success" | "error" = "success") {
+    setMsg({ text, type });
+    setTimeout(() => setMsg(null), 3500);
+  }
 
-  async function fetchKlinikler() {
-    const res = await fetch("/api/admin/klinik");
-    const data = await res.json();
-    setKlinikler(data);
-    if (aktifKlinik) {
-      const updated = data.find((k: TourConfig) => k.id === aktifKlinik.id);
-      setAktifKlinik(updated || null);
+  async function fetchFirmalar(keepId?: string) {
+    try {
+      const res = await fetch("/api/admin/klinik");
+      if (!res.ok) throw new Error();
+      const data: TourConfig[] = await res.json();
+      setFirmalar(data);
+      const id = keepId ?? aktifFirma?.id;
+      if (id) {
+        const updated = data.find((k) => k.id === id);
+        setAktifFirma(updated ?? data[0] ?? null);
+      } else {
+        setAktifFirma(data[0] ?? null);
+      }
+    } catch {
+      flash("Veri yüklenemedi", "error");
     }
   }
 
-  async function klinikEkle() {
-    if (!klinikForm.klinikAdi) return;
+  async function firmaEkle() {
+    if (!firmaForm.klinikAdi.trim()) return;
     setSaving(true);
-    await fetch("/api/admin/klinik", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(klinikForm) });
-    await fetchKlinikler();
-    setKlinikForm({ klinikAdi: "", logo: "", website: "", telefon: "" });
-    setYeniKlinikForm(false);
-    flash("Klinik eklendi ✓");
+    try {
+      const res = await fetch("/api/admin/klinik", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(firmaForm),
+      });
+      if (!res.ok) throw new Error();
+      const yeni: TourConfig = await res.json();
+      await fetchFirmalar(yeni.id);
+      setFirmaForm({ klinikAdi: "", logo: "", website: "", telefon: "" });
+      setYeniFirmaForm(false);
+      flash("Firma eklendi ✓");
+    } catch {
+      flash("Hata oluştu", "error");
+    }
     setSaving(false);
   }
 
-  async function klinikSil(id: string) {
-    if (!confirm("Bu kliniği silmek istediğinizden emin misiniz?")) return;
-    await fetch("/api/admin/klinik", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    await fetchKlinikler();
-    if (aktifKlinik?.id === id) setAktifKlinik(null);
-    flash("Klinik silindi");
+  async function firmaSil(id: string) {
+    if (!confirm("Bu firmayı silmek istediğinizden emin misiniz?")) return;
+    try {
+      await fetch("/api/admin/klinik", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      await fetchFirmalar();
+      flash("Firma silindi");
+    } catch {
+      flash("Hata oluştu", "error");
+    }
   }
 
   async function odaEkle() {
-    if (!aktifKlinik || !odaForm.baslik) return;
+    if (!aktifFirma || !odaForm.baslik.trim()) return;
     setSaving(true);
-    await fetch("/api/admin/oda", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ klinikId: aktifKlinik.id, oda: odaForm }) });
-    await fetchKlinikler();
-    setOdaForm({ baslik: "", kategori: "Klinikler", aciklama: "", ikon: "tooth" });
-    setYeniOdaForm(false);
-    flash("Oda eklendi ✓");
+    try {
+      const res = await fetch("/api/admin/oda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ klinikId: aktifFirma.id, oda: odaForm }),
+      });
+      if (!res.ok) throw new Error();
+      await fetchFirmalar(aktifFirma.id);
+      setOdaForm({ baslik: "", kategori: "Klinikler", aciklama: "", ikon: "tooth" });
+      setYeniOdaForm(false);
+      flash("Oda eklendi ✓");
+    } catch {
+      flash("Hata oluştu", "error");
+    }
     setSaving(false);
   }
 
   async function odaSil(odaId: string) {
-    if (!aktifKlinik || !confirm("Bu odayı silmek istediğinizden emin misiniz?")) return;
-    await fetch("/api/admin/oda", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ klinikId: aktifKlinik.id, odaId }) });
-    await fetchKlinikler();
-    flash("Oda silindi");
+    if (!aktifFirma || !confirm("Bu odayı silmek istediğinizden emin misiniz?")) return;
+    try {
+      await fetch("/api/admin/oda", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ klinikId: aktifFirma.id, odaId }),
+      });
+      await fetchFirmalar(aktifFirma.id);
+      flash("Oda silindi");
+    } catch {
+      flash("Hata oluştu", "error");
+    }
   }
 
   async function fotografYukle(file: File, odaId: string) {
-    if (!aktifKlinik) return;
+    if (!aktifFirma) return;
     setUploadingOda(odaId);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("klinikId", aktifKlinik.id);
-    fd.append("odaId", odaId);
-    await fetch("/api/admin/fotograf", { method: "POST", body: fd });
-    await fetchKlinikler();
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("klinikId", aktifFirma.id);
+      fd.append("odaId", odaId);
+      const res = await fetch("/api/admin/fotograf", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Yükleme hatası");
+      }
+      await fetchFirmalar(aktifFirma.id);
+      flash("Fotoğraf yüklendi ✓");
+    } catch (e: any) {
+      flash(e.message || "Fotoğraf yüklenemedi", "error");
+    }
     setUploadingOda(null);
-    flash("Fotoğraf yüklendi ✓");
   }
 
-  async function hotspotKaydet(oda: Oda, hotspotlar: Hotspot[], yaw: number, pitch: number) {
-    if (!aktifKlinik) return;
-    await fetch("/api/admin/oda", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ klinikId: aktifKlinik.id, oda: { ...oda, hotspotlar, baslangicYaw: yaw, baslangicPitch: pitch } }),
-    });
-    await fetchKlinikler();
-    setHotspotEditorOda(null);
-    flash("Hotspotlar kaydedildi ✓");
+  async function hotspotKaydet(oda: Oda, hotspotlar: Hotspot[], yaw: number, pitch: number, hfov: number) {
+    if (!aktifFirma) return;
+    try {
+      await fetch("/api/admin/oda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          klinikId: aktifFirma.id,
+          oda: { ...oda, hotspotlar, baslangicYaw: yaw, baslangicPitch: pitch, baslangicHfov: hfov },
+        }),
+      });
+      await fetchFirmalar(aktifFirma.id);
+      setHotspotEditorOda(null);
+      flash("Kaydedildi ✓");
+    } catch {
+      flash("Kayıt hatası", "error");
+    }
   }
 
   return (
     <div style={{ fontFamily: "Poppins, sans-serif" }} className="min-h-screen bg-gray-50 flex flex-col">
       {/* Topbar */}
-      <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+      <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <img src="/turuncu360-logo.svg" alt="Turuncu360" className="h-7" />
           <span className="text-gray-300">|</span>
           <span className="text-sm font-medium text-gray-600">Admin Paneli</span>
         </div>
-        {msg && <span className="text-sm text-green-600 font-medium">{msg}</span>}
+        {msg && (
+          <span className={`text-sm font-medium px-3 py-1 rounded-full ${msg.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+            {msg.text}
+          </span>
+        )}
         <a href="/" target="_blank" className="text-xs text-gray-400 hover:text-gray-600">Siteyi Görüntüle →</a>
       </div>
 
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 53px)" }}>
-        {/* Sol: Klinik listesi */}
-        <div className="w-64 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+        {/* Sol: Firma listesi */}
+        <div className="w-64 bg-white border-r border-gray-100 flex flex-col overflow-hidden flex-shrink-0">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Klinikler</span>
-            <button onClick={() => setYeniKlinikForm(true)} className="text-xs font-medium" style={{ color: "#f0851b" }}>+ Ekle</button>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Firmalar</span>
+            <button onClick={() => setYeniFirmaForm(true)} className="text-xs font-medium" style={{ color: "#f0851b" }}>+ Ekle</button>
           </div>
 
-          {yeniKlinikForm && (
+          {yeniFirmaForm && (
             <div className="p-3 border-b border-gray-100 bg-orange-50">
-              <input className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none" placeholder="Klinik adı *" value={klinikForm.klinikAdi} onChange={(e) => setKlinikForm({ ...klinikForm, klinikAdi: e.target.value })} />
-              <input className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none" placeholder="Logo URL" value={klinikForm.logo} onChange={(e) => setKlinikForm({ ...klinikForm, logo: e.target.value })} />
-              <input className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none" placeholder="Website" value={klinikForm.website} onChange={(e) => setKlinikForm({ ...klinikForm, website: e.target.value })} />
-              <input className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-3 focus:outline-none" placeholder="Telefon" value={klinikForm.telefon} onChange={(e) => setKlinikForm({ ...klinikForm, telefon: e.target.value })} />
+              <input
+                className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none focus:border-orange-400"
+                placeholder="Firma adı *"
+                value={firmaForm.klinikAdi}
+                onChange={(e) => setFirmaForm({ ...firmaForm, klinikAdi: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && firmaEkle()}
+              />
+              <input
+                className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none focus:border-orange-400"
+                placeholder="Logo URL"
+                value={firmaForm.logo}
+                onChange={(e) => setFirmaForm({ ...firmaForm, logo: e.target.value })}
+              />
+              <input
+                className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none focus:border-orange-400"
+                placeholder="Website"
+                value={firmaForm.website}
+                onChange={(e) => setFirmaForm({ ...firmaForm, website: e.target.value })}
+              />
+              <input
+                className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-3 focus:outline-none focus:border-orange-400"
+                placeholder="Telefon"
+                value={firmaForm.telefon}
+                onChange={(e) => setFirmaForm({ ...firmaForm, telefon: e.target.value })}
+              />
               <div className="flex gap-2">
-                <button onClick={klinikEkle} disabled={saving} className="flex-1 py-2 rounded-lg text-white text-xs font-medium" style={{ background: "#f0851b" }}>Kaydet</button>
-                <button onClick={() => setYeniKlinikForm(false)} className="flex-1 py-2 rounded-lg text-gray-500 text-xs border border-gray-200">İptal</button>
+                <button onClick={firmaEkle} disabled={saving} className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-50" style={{ background: "#f0851b" }}>
+                  {saving ? "..." : "Kaydet"}
+                </button>
+                <button onClick={() => { setYeniFirmaForm(false); setFirmaForm({ klinikAdi: "", logo: "", website: "", telefon: "" }); }} className="flex-1 py-2 rounded-lg text-gray-500 text-xs border border-gray-200">İptal</button>
               </div>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto">
-            {klinikler.map((k) => (
+            {firmalar.map((k) => (
               <div
                 key={k.id}
-                onClick={() => setAktifKlinik(k)}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between group border-b border-gray-50 ${aktifKlinik?.id === k.id ? "bg-orange-50 border-l-2" : "hover:bg-gray-50"}`}
-                style={aktifKlinik?.id === k.id ? { borderLeftColor: "#f0851b" } : {}}
+                onClick={() => setAktifFirma(k)}
+                className={`px-4 py-3 cursor-pointer flex items-center justify-between group border-b border-gray-50 transition-colors ${aktifFirma?.id === k.id ? "bg-orange-50 border-l-2" : "hover:bg-gray-50"}`}
+                style={aktifFirma?.id === k.id ? { borderLeftColor: "#f0851b" } : {}}
               >
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{k.klinikAdi}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{k.klinikAdi}</p>
                   <p className="text-xs text-gray-400">{k.odalar.length} oda</p>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); klinikSil(k.id); }} className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 text-sm">✕</button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); firmaSil(k.id); }}
+                  className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 text-sm flex-shrink-0 ml-2"
+                >✕</button>
               </div>
             ))}
+            {firmalar.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-8">Henüz firma eklenmemiş</p>
+            )}
           </div>
         </div>
 
         {/* Sağ: Oda yönetimi */}
         <div className="flex-1 overflow-y-auto p-6">
-          {!aktifKlinik ? (
-            <div className="flex items-center justify-center h-full text-gray-400 text-sm">Soldan bir klinik seçin</div>
+          {!aktifFirma ? (
+            <div className="flex items-center justify-center h-full text-gray-400 text-sm">Soldan bir firma seçin</div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-lg font-semibold text-gray-900">{aktifKlinik.klinikAdi}</h1>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    <a href={`/${aktifKlinik.id}`} target="_blank" className="text-orange-500 hover:underline">
-                      sanaltur.turuncu360.com/{aktifKlinik.id} ↗
-                    </a>
-                  </p>
+                  <h1 className="text-lg font-semibold text-gray-900">{aktifFirma.klinikAdi}</h1>
+                  <a href={`/${aktifFirma.id}`} target="_blank" className="text-xs mt-0.5 hover:underline" style={{ color: "#f0851b" }}>
+                    sanaltur.turuncu360.com/{aktifFirma.id} ↗
+                  </a>
                 </div>
                 <button
                   onClick={() => setYeniOdaForm(true)}
@@ -180,82 +271,105 @@ export default function AdminClient({ initialKlinikler }: Props) {
                 </button>
               </div>
 
-              {/* Yeni oda formu */}
               {yeniOdaForm && (
                 <div className="bg-orange-50 border border-orange-100 rounded-xl p-5 mb-6">
                   <p className="text-sm font-semibold text-gray-800 mb-4">Yeni Oda</p>
                   <div className="grid grid-cols-2 gap-3">
-                    <input className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2" placeholder="Oda adı *" value={odaForm.baslik} onChange={(e) => setOdaForm({ ...odaForm, baslik: e.target.value })} />
+                    <input
+                      className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2"
+                      placeholder="Oda adı *"
+                      value={odaForm.baslik}
+                      onChange={(e) => setOdaForm({ ...odaForm, baslik: e.target.value })}
+                    />
                     <select className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none bg-white" value={odaForm.kategori} onChange={(e) => setOdaForm({ ...odaForm, kategori: e.target.value })}>
                       {KATEGORILER.map((k) => <option key={k}>{k}</option>)}
                     </select>
                     <select className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none bg-white" value={odaForm.ikon} onChange={(e) => setOdaForm({ ...odaForm, ikon: e.target.value })}>
                       {IKONLAR.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
                     </select>
-                    <input className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2" placeholder="Açıklama (opsiyonel)" value={odaForm.aciklama} onChange={(e) => setOdaForm({ ...odaForm, aciklama: e.target.value })} />
+                    <input
+                      className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2"
+                      placeholder="Açıklama (opsiyonel)"
+                      value={odaForm.aciklama}
+                      onChange={(e) => setOdaForm({ ...odaForm, aciklama: e.target.value })}
+                    />
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button onClick={odaEkle} disabled={saving} className="px-5 py-2 rounded-lg text-white text-sm font-medium" style={{ background: "#f0851b" }}>Kaydet</button>
+                    <button onClick={odaEkle} disabled={saving} className="px-5 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50" style={{ background: "#f0851b" }}>
+                      {saving ? "Kaydediliyor..." : "Kaydet"}
+                    </button>
                     <button onClick={() => setYeniOdaForm(false)} className="px-5 py-2 rounded-lg text-gray-500 text-sm border border-gray-200">İptal</button>
                   </div>
                 </div>
               )}
 
-              {/* Oda kartları */}
               <div className="grid gap-4">
-                {aktifKlinik.odalar.map((oda) => (
+                {aktifFirma.odalar.map((oda) => (
                   <div key={oda.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                     <div className="flex items-start gap-4 p-4">
-                      {/* Fotoğraf önizleme */}
-                      <div className="w-32 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
+                      {/* Thumbnail */}
+                      <div
+                        className="w-36 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative cursor-pointer group"
+                        onClick={() => { uploadOdaIdRef.current = oda.id; fileInputRef.current?.click(); }}
+                        title="Tıkla: fotoğraf yükle / değiştir"
+                      >
                         {oda.foto ? (
                           <img src={oda.foto} alt={oda.baslik} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Fotoğraf yok</div>
+                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-1">
+                            <span className="text-2xl">📷</span>
+                            <span className="text-xs">Fotoğraf yükle</span>
+                          </div>
                         )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">Değiştir</span>
+                        </div>
                         {uploadingOda === oda.id && (
                           <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f0851b", borderTopColor: "transparent" }} />
+                            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f0851b", borderTopColor: "transparent" }} />
                           </div>
                         )}
                       </div>
 
-                      {/* Bilgi */}
-                      <div className="flex-1">
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium text-gray-900 text-sm">{oda.baslik}</p>
-                            <p className="text-xs text-gray-400">{oda.kategori} · {oda.aciklama}</p>
-                            <p className="text-xs text-gray-300 mt-1">{oda.hotspotlar.length} hotspot · Yaw: {oda.baslangicYaw}°</p>
+                            <p className="text-xs text-gray-400">{oda.kategori}{oda.aciklama ? ` · ${oda.aciklama}` : ""}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs text-gray-300">Yaw: {oda.baslangicYaw ?? 0}°</span>
+                              <span className="text-xs text-gray-300">Pitch: {oda.baslangicPitch ?? 0}°</span>
+                              <span className="text-xs text-gray-300">Zoom: {(oda as any).baslangicHfov ?? 100}°</span>
+                              <span className="text-xs text-gray-300">{oda.hotspotlar.length} hotspot</span>
+                            </div>
                           </div>
-                          <button onClick={() => odaSil(oda.id)} className="text-gray-300 hover:text-red-400 text-sm ml-2">✕</button>
+                          <button onClick={() => odaSil(oda.id)} className="text-gray-300 hover:text-red-400 text-sm ml-2 flex-shrink-0">✕</button>
                         </div>
 
-                        <div className="flex items-center gap-2 mt-3">
-                          {/* Fotoğraf yükle */}
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
                           <button
-                            onClick={() => { uploadOdaRef.current = oda.id; fileInputRef.current?.click(); }}
-                            className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                            onClick={() => { uploadOdaIdRef.current = oda.id; fileInputRef.current?.click(); }}
+                            className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                           >
-                            {oda.foto ? "📷 Fotoğrafı Değiştir" : "📷 Fotoğraf Yükle"}
+                            📷 {oda.foto ? "Fotoğrafı Değiştir" : "Fotoğraf Yükle"}
                           </button>
-                          {/* Hotspot editörü */}
                           <button
                             onClick={() => setHotspotEditorOda(oda)}
                             disabled={!oda.foto}
-                            className="text-xs px-3 py-1.5 rounded-lg text-white font-medium disabled:opacity-40"
+                            className="text-xs px-3 py-1.5 rounded-lg text-white font-medium disabled:opacity-40 transition-opacity"
                             style={{ background: "#f0851b" }}
                           >
-                            🎯 Hotspot Düzenle ({oda.hotspotlar.length})
+                            🎯 Hotspot & Kamera ({oda.hotspotlar.length})
                           </button>
                         </div>
-                        {!oda.foto && <p className="text-xs text-orange-400 mt-1">Hotspot eklemek için önce fotoğraf yükleyin</p>}
+                        {!oda.foto && <p className="text-xs mt-1" style={{ color: "#f0851b" }}>Fotoğraf yükleyince hotspot editörü açılır</p>}
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {aktifKlinik.odalar.length === 0 && (
+                {aktifFirma.odalar.length === 0 && (
                   <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
                     Henüz oda eklenmemiş. Yukarıdan ekleyin.
                   </div>
@@ -274,17 +388,19 @@ export default function AdminClient({ initialKlinikler }: Props) {
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file && uploadOdaRef.current) fotografYukle(file, uploadOdaRef.current);
+          if (file && uploadOdaIdRef.current) {
+            fotografYukle(file, uploadOdaIdRef.current);
+          }
           e.target.value = "";
         }}
       />
 
       {/* Hotspot Editor Modal */}
-      {hotspotEditorOda && aktifKlinik && (
+      {hotspotEditorOda && aktifFirma && (
         <HotspotEditor
           oda={hotspotEditorOda}
-          tumOdalar={aktifKlinik.odalar}
-          onSave={(h, y, p) => hotspotKaydet(hotspotEditorOda, h, y, p)}
+          tumOdalar={aktifFirma.odalar}
+          onSave={(h, y, p, hfov) => hotspotKaydet(hotspotEditorOda, h, y, p, hfov)}
           onClose={() => setHotspotEditorOda(null)}
         />
       )}

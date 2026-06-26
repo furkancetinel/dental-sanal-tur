@@ -5,7 +5,7 @@ import { Oda, Hotspot } from "../types";
 interface Props {
   oda: Oda;
   tumOdalar: Oda[];
-  onSave: (hotspotlar: Hotspot[], yaw: number, pitch: number) => void;
+  onSave: (hotspotlar: Hotspot[], yaw: number, pitch: number, hfov: number) => void;
   onClose: () => void;
 }
 
@@ -13,13 +13,16 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
   const viewerRef = useRef<HTMLDivElement>(null);
   const pannellumRef = useRef<any>(null);
   const [hotspotlar, setHotspotlar] = useState<Hotspot[]>([...oda.hotspotlar]);
-  const [baslangicYaw, setBaslangicYaw] = useState(oda.baslangicYaw);
-  const [baslangicPitch, setBaslangicPitch] = useState(oda.baslangicPitch);
+  const [yaw, setYaw] = useState(oda.baslangicYaw ?? 0);
+  const [pitch, setPitch] = useState(oda.baslangicPitch ?? 0);
+  const [hfov, setHfov] = useState((oda as any).baslangicHfov ?? 100);
   const [mode, setMode] = useState<"view" | "add">("view");
-  const [pendingHotspot, setPendingHotspot] = useState<{ yaw: number; pitch: number } | null>(null);
-  const [hedefOda, setHedefOda] = useState<string>("");
-  const [hedefBaslik, setHedefBaslik] = useState<string>("");
+  const [pending, setPending] = useState<{ yaw: number; pitch: number } | null>(null);
+  const [hedefOda, setHedefOda] = useState("");
+  const [hedefBaslik, setHedefBaslik] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   useEffect(() => {
     if (!(window as any).pannellum) {
@@ -37,194 +40,228 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
   }, []);
 
   useEffect(() => {
-    if (!loaded || !viewerRef.current) return;
-    initViewer();
+    if (loaded) initViewer(yaw, pitch, hfov);
   }, [loaded]);
 
   useEffect(() => {
-    if (!loaded || !pannellumRef.current) return;
-    refreshHotspots();
+    if (loaded && pannellumRef.current) rebuildHotspots();
   }, [hotspotlar]);
 
-  function buildHotspots() {
-    return hotspotlar.map((h, i) => ({
+  function buildHotspotDefs(hs: Hotspot[]) {
+    return hs.map((h, i) => ({
       pitch: h.pitch,
       yaw: h.yaw,
       type: "custom",
       text: h.baslik,
-      cssClass: "pnlm-hotspot-admin",
+      cssClass: "pnlm-hs-admin",
       clickHandlerFunc: () => {
-        if (window.confirm(`"${h.baslik}" hotspotunu sil?`)) {
+        if (confirm(`"${h.baslik}" hotspotunu sil?`)) {
           setHotspotlar((prev) => prev.filter((_, idx) => idx !== i));
         }
       },
     }));
   }
 
-  function initViewer() {
-    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} }
+  function initViewer(startYaw: number, startPitch: number, startHfov: number) {
+    if (!viewerRef.current) return;
+    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+
     pannellumRef.current = (window as any).pannellum.viewer(viewerRef.current, {
       type: "equirectangular",
       panorama: oda.foto,
       autoLoad: true,
-      yaw: baslangicYaw,
-      pitch: baslangicPitch,
-      hfov: 100,
+      yaw: startYaw,
+      pitch: startPitch,
+      hfov: startHfov,
+      minHfov: 30,
+      maxHfov: 150,
       showZoomCtrl: false,
       showFullscreenCtrl: false,
       showControls: false,
-      hotSpots: buildHotspots(),
+      hotSpots: buildHotspotDefs(hotspotlar),
     });
 
     pannellumRef.current.on("mouseup", (_: any, coords: any) => {
-      if (mode !== "add" || !coords) return;
-      setPendingHotspot({ yaw: Math.round(coords.yaw * 10) / 10, pitch: Math.round(coords.pitch * 10) / 10 });
+      if (!modeRef.current || modeRef.current !== "add" || !coords) return;
+      setPending({
+        yaw: Math.round(coords.yaw * 10) / 10,
+        pitch: Math.round(coords.pitch * 10) / 10,
+      });
     });
   }
 
-  function refreshHotspots() {
+  function rebuildHotspots() {
     if (!pannellumRef.current) return;
-    const yaw = pannellumRef.current.getYaw();
-    const pitch = pannellumRef.current.getPitch();
-    pannellumRef.current.destroy();
-    pannellumRef.current = (window as any).pannellum.viewer(viewerRef.current, {
-      type: "equirectangular",
-      panorama: oda.foto,
-      autoLoad: true,
-      yaw,
-      pitch,
-      hfov: 100,
-      showZoomCtrl: false,
-      showFullscreenCtrl: false,
-      showControls: false,
-      hotSpots: buildHotspots(),
-    });
-    pannellumRef.current.on("mouseup", (_: any, coords: any) => {
-      if (mode !== "add" || !coords) return;
-      setPendingHotspot({ yaw: Math.round(coords.yaw * 10) / 10, pitch: Math.round(coords.pitch * 10) / 10 });
-    });
+    const curYaw = pannellumRef.current.getYaw();
+    const curPitch = pannellumRef.current.getPitch();
+    const curHfov = pannellumRef.current.getHfov();
+    initViewer(curYaw, curPitch, curHfov);
   }
 
-  function setStartPosition() {
+  function syncFromViewer() {
     if (!pannellumRef.current) return;
     const y = Math.round(pannellumRef.current.getYaw() * 10) / 10;
     const p = Math.round(pannellumRef.current.getPitch() * 10) / 10;
-    setBaslangicYaw(y);
-    setBaslangicPitch(p);
-    alert(`Başlangıç konumu ayarlandı: Yaw ${y}°, Pitch ${p}°`);
+    const h = Math.round(pannellumRef.current.getHfov() * 10) / 10;
+    setYaw(y); setPitch(p); setHfov(h);
+    return { y, p, h };
+  }
+
+  function applyToViewer(y: number, p: number, h: number) {
+    if (!pannellumRef.current) return;
+    pannellumRef.current.setYaw(y, false);
+    pannellumRef.current.setPitch(p, false);
+    pannellumRef.current.setHfov(h, false);
+  }
+
+  function setStartPosition() {
+    const vals = syncFromViewer();
+    if (vals) alert(`Başlangıç konumu ayarlandı:\nYaw: ${vals.y}° · Pitch: ${vals.p}° · Zoom: ${vals.h}°`);
   }
 
   function addHotspot() {
-    if (!pendingHotspot || !hedefOda) return;
+    if (!pending || !hedefOda) return;
     const baslik = hedefBaslik || tumOdalar.find((o) => o.id === hedefOda)?.baslik || hedefOda;
-    const yeni: Hotspot = { hedef: hedefOda, yaw: pendingHotspot.yaw, pitch: pendingHotspot.pitch, baslik };
-    setHotspotlar((prev) => [...prev, yeni]);
-    setPendingHotspot(null);
-    setHedefOda("");
-    setHedefBaslik("");
-    setMode("view");
+    setHotspotlar((prev) => [...prev, { hedef: hedefOda, yaw: pending.yaw, pitch: pending.pitch, baslik }]);
+    setPending(null); setHedefOda(""); setHedefBaslik(""); setMode("view");
   }
 
   const diger = tumOdalar.filter((o) => o.id !== oda.id);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-5xl flex flex-col" style={{ height: "90vh", fontFamily: "Poppins, sans-serif" }}>
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3">
+      <div className="bg-white rounded-2xl w-full flex flex-col overflow-hidden" style={{ maxWidth: 1100, height: "92vh", fontFamily: "Poppins, sans-serif" }}>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
           <div>
-            <h2 className="font-semibold text-gray-900 text-sm">Hotspot Editörü — {oda.baslik}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Panoramada gezin, nokta ekleyin</p>
+            <h2 className="font-semibold text-gray-900 text-sm">Hotspot & Kamera Editörü</h2>
+            <p className="text-xs text-gray-400">📍 {oda.baslik}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={setStartPosition}
-              className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-            >
-              📍 Başlangıç Konumunu Ayarla
-            </button>
-            <button
-              onClick={() => setMode(mode === "add" ? "view" : "add")}
-              className="text-xs px-3 py-1.5 rounded-lg text-white font-medium"
+              onClick={() => { const v = syncFromViewer(); setMode(mode === "add" ? "view" : "add"); }}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium text-white"
               style={{ background: mode === "add" ? "#ef4444" : "#f0851b" }}
             >
               {mode === "add" ? "✕ İptal" : "+ Hotspot Ekle"}
             </button>
             <button
-              onClick={() => onSave(hotspotlar, baslangicYaw, baslangicPitch)}
-              className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-medium"
+              onClick={() => { const v = syncFromViewer(); if (v) onSave(hotspotlar, v.y, v.p, v.h); }}
+              className="text-xs bg-gray-900 text-white px-4 py-1.5 rounded-lg font-medium"
             >
               Kaydet
             </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none px-1">✕</button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none w-7 h-7 flex items-center justify-center">✕</button>
           </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
           {/* Panorama */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative bg-gray-900">
             {mode === "add" && (
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-orange-500 text-white text-xs px-4 py-2 rounded-full font-medium">
-                Tıklayarak hotspot noktası seçin
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-orange-500 text-white text-xs px-5 py-2 rounded-full font-medium shadow-lg pointer-events-none">
+                Panoramada bir noktaya tıklayın
               </div>
             )}
             <div ref={viewerRef} className="w-full h-full" />
           </div>
 
           {/* Sağ panel */}
-          <div className="w-64 border-l border-gray-100 flex flex-col overflow-hidden">
+          <div className="w-72 border-l border-gray-100 flex flex-col overflow-hidden bg-white">
+
+            {/* Kamera ayarları */}
+            <div className="p-4 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Başlangıç Kamerası</p>
+
+              <label className="text-xs text-gray-500 mb-1 block">Yatay Açı (Yaw): <span className="font-medium text-gray-800">{yaw}°</span></label>
+              <input type="range" min="-180" max="180" step="0.5" value={yaw}
+                onChange={(e) => { const v = Number(e.target.value); setYaw(v); applyToViewer(v, pitch, hfov); }}
+                className="w-full mb-3" style={{ accentColor: "#f0851b" }}
+              />
+
+              <label className="text-xs text-gray-500 mb-1 block">Dikey Açı (Pitch): <span className="font-medium text-gray-800">{pitch}°</span></label>
+              <input type="range" min="-90" max="90" step="0.5" value={pitch}
+                onChange={(e) => { const v = Number(e.target.value); setPitch(v); applyToViewer(yaw, v, hfov); }}
+                className="w-full mb-3" style={{ accentColor: "#f0851b" }}
+              />
+
+              <label className="text-xs text-gray-500 mb-1 block">Zoom (Hfov): <span className="font-medium text-gray-800">{hfov}°</span> <span className="text-gray-300">(küçük = yakın)</span></label>
+              <input type="range" min="30" max="150" step="1" value={hfov}
+                onChange={(e) => { const v = Number(e.target.value); setHfov(v); applyToViewer(yaw, pitch, v); }}
+                className="w-full mb-3" style={{ accentColor: "#f0851b" }}
+              />
+
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Yaw", val: yaw, set: (v: number) => { setYaw(v); applyToViewer(v, pitch, hfov); } },
+                  { label: "Pitch", val: pitch, set: (v: number) => { setPitch(v); applyToViewer(yaw, v, hfov); } },
+                  { label: "Zoom", val: hfov, set: (v: number) => { setHfov(v); applyToViewer(yaw, pitch, v); } },
+                ].map(({ label, val, set }) => (
+                  <div key={label}>
+                    <p className="text-xs text-gray-400 mb-1">{label}</p>
+                    <input
+                      type="number"
+                      value={val}
+                      onChange={(e) => set(Number(e.target.value))}
+                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-orange-400 text-center"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={setStartPosition}
+                className="w-full mt-3 text-xs border py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                style={{ borderColor: "#f0851b", color: "#f0851b" }}
+              >
+                📍 Panoramadan Al
+              </button>
+              <p className="text-xs text-gray-400 mt-1 text-center">Panoramayı istediğiniz konuma getirip tıklayın</p>
+            </div>
+
             {/* Pending hotspot */}
-            {pendingHotspot && (
+            {pending && (
               <div className="p-4 bg-orange-50 border-b border-orange-100">
                 <p className="text-xs font-semibold text-orange-800 mb-3">Yeni Hotspot</p>
-                <p className="text-xs text-orange-600 mb-3">Yaw: {pendingHotspot.yaw}° / Pitch: {pendingHotspot.pitch}°</p>
+                <p className="text-xs text-orange-500 mb-3 font-mono">Yaw: {pending.yaw}° · Pitch: {pending.pitch}°</p>
                 <select
                   value={hedefOda}
                   onChange={(e) => setHedefOda(e.target.value)}
-                  className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none focus:border-orange-400 bg-white"
+                  className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-2 focus:outline-none bg-white"
                 >
                   <option value="">Hedef oda seçin...</option>
-                  {diger.map((o) => (
-                    <option key={o.id} value={o.id}>{o.baslik}</option>
-                  ))}
+                  {diger.map((o) => <option key={o.id} value={o.id}>{o.baslik}</option>)}
                 </select>
                 <input
                   type="text"
                   placeholder="Buton yazısı (opsiyonel)"
                   value={hedefBaslik}
                   onChange={(e) => setHedefBaslik(e.target.value)}
-                  className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-3 focus:outline-none focus:border-orange-400"
+                  onKeyDown={(e) => e.key === "Enter" && addHotspot()}
+                  className="w-full border border-orange-200 rounded-lg px-3 py-2 text-xs mb-3 focus:outline-none"
                 />
-                <button
-                  onClick={addHotspot}
-                  disabled={!hedefOda}
-                  className="w-full py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40"
-                  style={{ background: "#f0851b" }}
-                >
-                  Ekle
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={addHotspot} disabled={!hedefOda} className="flex-1 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-40" style={{ background: "#f0851b" }}>Ekle</button>
+                  <button onClick={() => setPending(null)} className="flex-1 py-2 rounded-lg text-gray-500 text-xs border border-gray-200">İptal</button>
+                </div>
               </div>
             )}
 
             {/* Hotspot listesi */}
             <div className="flex-1 overflow-y-auto p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Hotspotlar ({hotspotlar.length})
-              </p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Hotspotlar ({hotspotlar.length})</p>
               {hotspotlar.length === 0 && (
-                <p className="text-xs text-gray-400">Henüz hotspot eklenmemiş.</p>
+                <p className="text-xs text-gray-400">Henüz hotspot eklenmemiş.<br/>+ Hotspot Ekle butonuna basıp panoramada bir noktaya tıklayın.</p>
               )}
               {hotspotlar.map((h, i) => (
-                <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-2">
-                  <div>
-                    <p className="text-xs font-medium text-gray-800">{h.baslik}</p>
+                <div key={i} className="flex items-start justify-between bg-gray-50 rounded-lg px-3 py-2.5 mb-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-800 truncate">{h.baslik}</p>
                     <p className="text-xs text-gray-400">→ {h.hedef}</p>
-                    <p className="text-xs text-gray-300">Y:{h.yaw}° P:{h.pitch}°</p>
+                    <p className="text-xs text-gray-300 font-mono">Y:{h.yaw}° P:{h.pitch}°</p>
                   </div>
-                  <button
-                    onClick={() => setHotspotlar((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="text-red-400 hover:text-red-600 text-sm"
-                  >✕</button>
+                  <button onClick={() => setHotspotlar((prev) => prev.filter((_, idx) => idx !== i))} className="text-red-300 hover:text-red-500 text-sm ml-2 flex-shrink-0">✕</button>
                 </div>
               ))}
             </div>
@@ -233,15 +270,17 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
       </div>
 
       <style>{`
-        .pnlm-hotspot-admin {
-          width: 32px !important; height: 32px !important;
-          background: rgba(240,133,27,0.9) !important;
-          border: 2px solid white !important;
-          border-radius: 50% !important;
-          cursor: pointer !important;
-          margin: -16px 0 0 -16px !important;
+        .pnlm-hs-admin {
+          width: 34px !important; height: 34px !important;
+          background: rgba(240,133,27,0.92) !important;
+          border: 2.5px solid rgba(255,255,255,0.85) !important;
+          border-radius: 50% !important; cursor: pointer !important;
+          margin: -17px 0 0 -17px !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+          transition: transform 0.15s !important;
         }
-        .pnlm-hotspot-admin:hover { background: #c8640a !important; transform: scale(1.2) !important; }
+        .pnlm-hs-admin:hover { background: #c8640a !important; transform: scale(1.2) !important; }
+        .pnlm-tooltip { font-family: Poppins, sans-serif !important; font-size: 12px !important; border-radius: 6px !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
       `}</style>
     </div>

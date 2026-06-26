@@ -72,7 +72,7 @@ export default function TourViewer({ config }: Props) {
         autoLoad: true,
         yaw: oda.baslangicYaw,
         pitch: oda.baslangicPitch,
-        hfov: 100,
+        hfov: oda.baslangicHfov ?? 100,
         showZoomCtrl: false,
         showFullscreenCtrl: true,
         showControls: false,

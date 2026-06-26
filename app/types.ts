@@ -14,6 +14,7 @@ export interface Oda {
   foto: string;
   baslangicYaw: number;
   baslangicPitch: number;
+  baslangicHfov?: number;
   hotspotlar: Hotspot[];
 }
 
