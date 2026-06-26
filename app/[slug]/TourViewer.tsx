@@ -118,29 +118,34 @@ export default function TourViewer({ config }: Props) {
           </div>
         ))}
       </div>
-      <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-center flex-shrink-0">
-        <img src="/turuncu360-logo.svg" alt="Turuncu360" className="h-6 w-auto opacity-70" />
-      </div>
     </>
   );
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628" }}>
       {/* Topbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 52 }}>
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 60 }}>
         <div className="flex items-center gap-3">
-          <button className="md:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5" onClick={() => setSidebarOpen(v => !v)}>
+          {/* Mobil hamburger - solda */}
+          <button className="md:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
             <span className="block w-5 h-0.5 bg-gray-600 rounded" />
             <span className="block w-5 h-0.5 bg-gray-600 rounded" />
             <span className="block w-5 h-0.5 bg-gray-600 rounded" />
           </button>
+        </div>
+
+        {/* Logo - desktop solda, mobilde tam ortada */}
+        <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:left-auto">
           {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-7 w-auto object-contain max-w-[140px]" onError={() => setLogoError(true)} />
+            <img src={config.logo} alt={config.klinikAdi} className="h-10 w-auto object-contain max-w-[180px]" onError={() => setLogoError(true)} />
           ) : (
             <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>
           )}
         </div>
+
         <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full font-medium hidden sm:block">360° Sanal Tur</span>
+        {/* Mobilde sağ taraf boşluk dengesi için */}
+        <div className="w-8 md:hidden" />
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
