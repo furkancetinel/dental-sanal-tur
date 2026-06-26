@@ -1,7 +1,5 @@
-import fs from "fs";
-import path from "path";
 import { notFound, redirect } from "next/navigation";
-import { TourConfig } from "../types";
+import { getKlinik } from "@/lib/config";
 import TourViewer from "./TourViewer";
 
 export const dynamic = "force-dynamic";
@@ -12,19 +10,9 @@ interface Props {
 
 const RESERVED = ["admin", "api", "_next", "favicon.ico"];
 
-function getConfig(slug: string): TourConfig | null {
-  try {
-    const configPath = path.join(process.cwd(), "public/tours", slug, "config.json");
-    if (!fs.existsSync(configPath)) return null;
-    return JSON.parse(fs.readFileSync(configPath, "utf-8"));
-  } catch {
-    return null;
-  }
-}
-
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const config = getConfig(slug);
+  const config = getKlinik(slug);
   return {
     title: config ? `${config.klinikAdi} — Sanal Tur` : "Sanal Tur",
   };
@@ -32,11 +20,8 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function TourPage({ params }: Props) {
   const { slug } = await params;
-  
-  // Reserved route'ları [slug]'ın yakalamasını engelle
   if (RESERVED.includes(slug)) redirect("/");
-  
-  const config = getConfig(slug);
+  const config = getKlinik(slug);
   if (!config) notFound();
   return <TourViewer config={config} />;
 }
