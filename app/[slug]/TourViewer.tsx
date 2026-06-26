@@ -178,6 +178,8 @@ export default function TourViewer({ config }: Props) {
           <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-7 w-auto opacity-80" />
         </div>
       )}
+
+          {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
               <div className="w-12 h-12 rounded-full border-t-white border-white/30 animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid" }} />
               <p className="text-white font-semibold text-base">{activeOda.baslik}</p>
