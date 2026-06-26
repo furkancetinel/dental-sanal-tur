@@ -127,12 +127,7 @@ export default function TourViewer({ config }: Props) {
           </div>
         ))}
       </div>
-      {/* Turuncu360 beyaz logo — en alta */}
-      {showLogo && (
-        <div className="px-4 py-4 flex items-center justify-center">
-          <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-8 w-auto opacity-90" />
-        </div>
-      )}
+      {/* Turuncu360 beyaz logo kaldırıldı — artık panorama sağ üstünde */}
     </>
   );
 
@@ -177,7 +172,12 @@ export default function TourViewer({ config }: Props) {
 
         {/* Viewer */}
         <div className="flex-1 relative">
-          {loading && (
+      {/* Turuncu360 logo — panorama sağ üst */}
+      {!loading && (
+        <div className="absolute top-4 right-4 z-10 pointer-events-none">
+          <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-7 w-auto opacity-80" />
+        </div>
+      )}
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
               <div className="w-12 h-12 rounded-full border-t-white border-white/30 animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid" }} />
               <p className="text-white font-semibold text-base">{activeOda.baslik}</p>
