@@ -5,15 +5,8 @@ import HotspotEditor from "./HotspotEditor";
 
 interface Props { initialKlinikler: TourConfig[] }
 
-const KATEGORILER = ["Klinikler", "Alanlar"];
-const IKONLAR = [
-  { value: "tooth", label: "Klinik" },
-  { value: "armchair", label: "Bekleme" },
-  { value: "route", label: "Koridor" },
-  { value: "shield-check", label: "Sterilizasyon" },
-  { value: "scan", label: "Röntgen" },
-  { value: "coffee", label: "Mutfak" },
-];
+const KATEGORI_ONERILERI = ["Klinikler", "Alanlar", "Ofisler", "Ortak Alanlar"];
+const ACIKLAMA_ONERILERI = ["Muayene & Tedavi", "Bekleme Salonu", "Sterilizasyon", "Röntgen", "Koridor", "Mutfak", "Toplantı Odası", "Resepsiyon"];
 
 export default function AdminClient({ initialKlinikler }: Props) {
   const [firmalar, setFirmalar] = useState<TourConfig[]>(initialKlinikler);
@@ -28,7 +21,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
   const uploadOdaIdRef = useRef<string>("");
 
   const [firmaForm, setFirmaForm] = useState({ klinikAdi: "", logo: "", website: "", telefon: "" });
-  const [odaForm, setOdaForm] = useState({ baslik: "", kategori: "Klinikler", aciklama: "", ikon: "tooth" });
+  const [odaForm, setOdaForm] = useState({ baslik: "", kategori: "Klinikler", aciklama: "" });
 
   function flash(text: string, type: "success" | "error" = "success") {
     setMsg({ text, type });
@@ -100,7 +93,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
       });
       if (!res.ok) throw new Error();
       await fetchFirmalar(aktifFirma.id);
-      setOdaForm({ baslik: "", kategori: "Klinikler", aciklama: "", ikon: "tooth" });
+      setOdaForm({ baslik: "", kategori: "Klinikler", aciklama: "" });
       setYeniOdaForm(false);
       flash("Oda eklendi ✓");
     } catch {
@@ -274,25 +267,49 @@ export default function AdminClient({ initialKlinikler }: Props) {
               {yeniOdaForm && (
                 <div className="bg-orange-50 border border-orange-100 rounded-xl p-5 mb-6">
                   <p className="text-sm font-semibold text-gray-800 mb-4">Yeni Oda</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-3">
+                    {/* Oda adı */}
                     <input
-                      className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2"
-                      placeholder="Oda adı *"
+                      className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                      placeholder="Oda adı * (örn: Klinik 1, Bekleme Salonu)"
                       value={odaForm.baslik}
                       onChange={(e) => setOdaForm({ ...odaForm, baslik: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && odaEkle()}
                     />
-                    <select className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none bg-white" value={odaForm.kategori} onChange={(e) => setOdaForm({ ...odaForm, kategori: e.target.value })}>
-                      {KATEGORILER.map((k) => <option key={k}>{k}</option>)}
-                    </select>
-                    <select className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none bg-white" value={odaForm.ikon} onChange={(e) => setOdaForm({ ...odaForm, ikon: e.target.value })}>
-                      {IKONLAR.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
-                    </select>
-                    <input
-                      className="border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none col-span-2"
-                      placeholder="Açıklama (opsiyonel)"
-                      value={odaForm.aciklama}
-                      onChange={(e) => setOdaForm({ ...odaForm, aciklama: e.target.value })}
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Kategori - serbest yazım + öneri */}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Kategori (menüde gruplar)</p>
+                        <input
+                          list="kategori-list"
+                          className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                          placeholder="Klinikler, Alanlar..."
+                          value={odaForm.kategori}
+                          onChange={(e) => setOdaForm({ ...odaForm, kategori: e.target.value })}
+                        />
+                        <datalist id="kategori-list">
+                          {[...KATEGORI_ONERILERI,
+                            ...firmalar.flatMap(k => k.odalar.map(o => o.kategori))
+                          ].filter((v, i, a) => v && a.indexOf(v) === i).map(k => <option key={k} value={k} />)}
+                        </datalist>
+                      </div>
+                      {/* Açıklama - serbest yazım + öneri */}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Açıklama (opsiyonel)</p>
+                        <input
+                          list="aciklama-list"
+                          className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                          placeholder="Muayene, Bekleme..."
+                          value={odaForm.aciklama}
+                          onChange={(e) => setOdaForm({ ...odaForm, aciklama: e.target.value })}
+                        />
+                        <datalist id="aciklama-list">
+                          {[...ACIKLAMA_ONERILERI,
+                            ...firmalar.flatMap(k => k.odalar.map(o => o.aciklama))
+                          ].filter((v, i, a) => v && a.indexOf(v) === i).map(k => <option key={k} value={k} />)}
+                        </datalist>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2 mt-4">
                     <button onClick={odaEkle} disabled={saving} className="px-5 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50" style={{ background: "#f0851b" }}>
