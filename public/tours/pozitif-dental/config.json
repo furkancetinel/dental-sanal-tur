@@ -1,0 +1,151 @@
+{
+  "id": "pozitif-dental",
+  "klinikAdi": "Pozitif Dental Klinik",
+  "logo": "https://pozitifklinik.com/wp-content/uploads/2024/04/Pozitif-Klinik.svg",
+  "renk": "#2563eb",
+  "website": "https://pozitifdental.com",
+  "telefon": "+90 555 000 0000",
+  "odalar": [
+    {
+      "id": "klinik1",
+      "baslik": "Klinik 1",
+      "kategori": "Klinikler",
+      "aciklama": "Muayene & Tedavi",
+      "ikon": "tooth",
+      "foto": "/tours/pozitif-dental/photos/klinik1.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "klinik2", "yaw": 90, "pitch": 0, "baslik": "Klinik 2" },
+        { "hedef": "koridor", "yaw": -90, "pitch": 0, "baslik": "Koridor" }
+      ]
+    },
+    {
+      "id": "klinik2",
+      "baslik": "Klinik 2",
+      "kategori": "Klinikler",
+      "aciklama": "Muayene & Tedavi",
+      "ikon": "tooth",
+      "foto": "/tours/pozitif-dental/photos/klinik2.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "klinik1", "yaw": -90, "pitch": 0, "baslik": "Klinik 1" },
+        { "hedef": "klinik3", "yaw": 90, "pitch": 0, "baslik": "Klinik 3" }
+      ]
+    },
+    {
+      "id": "klinik3",
+      "baslik": "Klinik 3",
+      "kategori": "Klinikler",
+      "aciklama": "Muayene & Tedavi",
+      "ikon": "tooth",
+      "foto": "/tours/pozitif-dental/photos/klinik3.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "klinik2", "yaw": -90, "pitch": 0, "baslik": "Klinik 2" },
+        { "hedef": "klinik4", "yaw": 90, "pitch": 0, "baslik": "Klinik 4" }
+      ]
+    },
+    {
+      "id": "klinik4",
+      "baslik": "Klinik 4",
+      "kategori": "Klinikler",
+      "aciklama": "Muayene & Tedavi",
+      "ikon": "tooth",
+      "foto": "/tours/pozitif-dental/photos/klinik4.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "klinik3", "yaw": -90, "pitch": 0, "baslik": "Klinik 3" },
+        { "hedef": "koridor", "yaw": 0, "pitch": 0, "baslik": "Koridor" }
+      ]
+    },
+    {
+      "id": "bekleme1",
+      "baslik": "Bekleme Salonu 1",
+      "kategori": "Alanlar",
+      "aciklama": "Giriş & Karşılama",
+      "ikon": "armchair",
+      "foto": "/tours/pozitif-dental/photos/bekleme1.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "bekleme2", "yaw": 90, "pitch": 0, "baslik": "Bekleme 2" },
+        { "hedef": "koridor", "yaw": 180, "pitch": 0, "baslik": "Koridor" }
+      ]
+    },
+    {
+      "id": "bekleme2",
+      "baslik": "Bekleme Salonu 2",
+      "kategori": "Alanlar",
+      "aciklama": "Oturma Alanı",
+      "ikon": "armchair",
+      "foto": "/tours/pozitif-dental/photos/bekleme2.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "bekleme1", "yaw": -90, "pitch": 0, "baslik": "Bekleme 1" },
+        { "hedef": "koridor", "yaw": 90, "pitch": 0, "baslik": "Koridor" }
+      ]
+    },
+    {
+      "id": "koridor",
+      "baslik": "Koridor",
+      "kategori": "Alanlar",
+      "aciklama": "Ana Geçiş",
+      "ikon": "route",
+      "foto": "/tours/pozitif-dental/photos/koridor.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "klinik1", "yaw": -90, "pitch": 0, "baslik": "Klinik 1" },
+        { "hedef": "bekleme1", "yaw": 0, "pitch": 0, "baslik": "Bekleme" },
+        { "hedef": "sterilizasyon", "yaw": 90, "pitch": 0, "baslik": "Sterilizasyon" }
+      ]
+    },
+    {
+      "id": "sterilizasyon",
+      "baslik": "Sterilizasyon",
+      "kategori": "Alanlar",
+      "aciklama": "Hijyen & Sterilizasyon",
+      "ikon": "shield-check",
+      "foto": "/tours/pozitif-dental/photos/sterilizasyon.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "koridor", "yaw": 180, "pitch": 0, "baslik": "Koridor" },
+        { "hedef": "rontgen", "yaw": 90, "pitch": 0, "baslik": "Röntgen" }
+      ]
+    },
+    {
+      "id": "rontgen",
+      "baslik": "Röntgen",
+      "kategori": "Alanlar",
+      "aciklama": "Görüntüleme Odası",
+      "ikon": "scan",
+      "foto": "/tours/pozitif-dental/photos/rontgen.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "sterilizasyon", "yaw": -90, "pitch": 0, "baslik": "Sterilizasyon" },
+        { "hedef": "mutfak", "yaw": 90, "pitch": 0, "baslik": "Mutfak" }
+      ]
+    },
+    {
+      "id": "mutfak",
+      "baslik": "Mutfak",
+      "kategori": "Alanlar",
+      "aciklama": "Personel Alanı",
+      "ikon": "coffee",
+      "foto": "/tours/pozitif-dental/photos/mutfak.jpg",
+      "baslangicYaw": 0,
+      "baslangicPitch": 0,
+      "hotspotlar": [
+        { "hedef": "rontgen", "yaw": -90, "pitch": 0, "baslik": "Röntgen" },
+        { "hedef": "koridor", "yaw": 180, "pitch": 0, "baslik": "Koridor" }
+      ]
+    }
+  ]
+}
