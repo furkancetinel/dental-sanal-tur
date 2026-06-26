@@ -74,8 +74,8 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
       yaw: startYaw,
       pitch: startPitch,
       hfov: startHfov,
-      minHfov: 30,
-      maxHfov: 150,
+      minHfov: 10,
+      maxHfov: 170,
       showZoomCtrl: false,
       showFullscreenCtrl: false,
       showControls: false,
@@ -110,9 +110,39 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
 
   function applyToViewer(y: number, p: number, h: number) {
     if (!pannellumRef.current) return;
-    pannellumRef.current.setYaw(y, false);
-    pannellumRef.current.setPitch(p, false);
-    pannellumRef.current.setHfov(h, false);
+    // Pannellum setHfov, mevcut maxHfov sınırını aşamaz
+    // Önce maxHfov'u güncelle, sonra değeri set et
+    try {
+      pannellumRef.current.setYaw(y, false);
+      pannellumRef.current.setPitch(p, false);
+      // hfov için viewer'ı yeniden başlat — pannellum setHfov çok kısıtlayıcı
+      const curYaw = pannellumRef.current.getYaw();
+      const curPitch = pannellumRef.current.getPitch();
+      initViewer2(curYaw, curPitch, h);
+    } catch {}
+  }
+
+  function initViewer2(startYaw: number, startPitch: number, startHfov: number) {
+    if (!viewerRef.current) return;
+    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+    pannellumRef.current = (window as any).pannellum.viewer(viewerRef.current, {
+      type: "equirectangular",
+      panorama: oda.foto,
+      autoLoad: true,
+      yaw: startYaw,
+      pitch: startPitch,
+      hfov: startHfov,
+      minHfov: 10,
+      maxHfov: 170,
+      showZoomCtrl: false,
+      showFullscreenCtrl: false,
+      showControls: false,
+      hotSpots: buildHotspotDefs(hotspotlar),
+    });
+    pannellumRef.current.on("mouseup", (_: any, coords: any) => {
+      if (!modeRef.current || modeRef.current !== "add" || !coords) return;
+      setPending({ yaw: Math.round(coords.yaw * 10) / 10, pitch: Math.round(coords.pitch * 10) / 10 });
+    });
   }
 
   function setStartPosition() {
@@ -188,7 +218,7 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
               />
 
               <label className="text-xs text-gray-500 mb-1 block">Zoom (Hfov): <span className="font-medium text-gray-800">{hfov}°</span> <span className="text-gray-300">(küçük = yakın)</span></label>
-              <input type="range" min="30" max="150" step="1" value={hfov}
+              <input type="range" min="10" max="150" step="1" value={hfov}
                 onChange={(e) => { const v = Number(e.target.value); setHfov(v); applyToViewer(yaw, pitch, v); }}
                 className="w-full mb-3" style={{ accentColor: "#f0851b" }}
               />
