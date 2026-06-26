@@ -209,69 +209,66 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <style>{`
-        /* Tüm hotspot tipleri için ortak stil — şeffaf, sadece beyaz ok */
         .pnlm-hs {
-          width: 48px !important; height: 48px !important;
-          border-radius: 50% !important; cursor: pointer !important;
-          margin: -24px 0 0 -24px !important;
-          display: flex !important; align-items: center !important; justify-content: center !important;
+          width: 44px !important;
+          height: 44px !important;
+          margin: -22px 0 0 -22px !important;
           background: transparent !important;
           border: none !important;
           box-shadow: none !important;
-          transition: transform 0.15s !important;
-        }
-        .pnlm-hs:hover { transform: scale(1.2) !important; }
-
-        /* SVG ikonları */
-        .pnlm-hs::after {
-          content: "" !important;
-          display: block !important;
-          width: 36px !important; height: 36px !important;
+          cursor: pointer !important;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Cpolyline points='17 30 25 22 17 14' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
           background-size: contain !important;
           background-repeat: no-repeat !important;
           background-position: center !important;
-          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)) !important;
+          transition: transform 0.15s, opacity 0.15s !important;
+          animation: hs-pulse 2.5s ease-in-out infinite !important;
+        }
+        .pnlm-hs:hover {
+          transform: scale(1.15) !important;
+          opacity: 0.9 !important;
         }
 
-        /* İlerleme - sağ ok */
-        .pnlm-hs-ilerleme::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='10 8 14 12 10 16'/%3E%3C/svg%3E") !important;
+        /* Tip'e göre farklı oklar */
+        .pnlm-hs-ileri {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Cpolyline points='14 27 22 17 30 27' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
         }
-        /* İleri - yukarı ok */
-        .pnlm-hs-ileri::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 14 12 10 16 14'/%3E%3C/svg%3E") !important;
+        .pnlm-hs-geri {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Cpolyline points='14 17 22 27 30 17' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
         }
-        /* Geri - aşağı ok */
-        .pnlm-hs-geri::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 10 12 14 16 10'/%3E%3C/svg%3E") !important;
+        .pnlm-hs-kapi {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Crect x='13' y='10' width='18' height='24' rx='1' fill='none' stroke='white' stroke-width='2'/%3E%3Ccircle cx='27' cy='22' r='1.5' fill='white'/%3E%3Cline x1='13' y1='10' x2='13' y2='34' stroke='white' stroke-width='2'/%3E%3C/svg%3E") !important;
         }
-        /* Kapı */
-        .pnlm-hs-kapi::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Crect x='8' y='6' width='8' height='12' rx='1'/%3E%3Ccircle cx='14' cy='12' r='0.8' fill='white'/%3E%3C/svg%3E") !important;
+        .pnlm-hs-yukari {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Cpolyline points='14 27 22 17 30 27' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
         }
-        /* Yukarı */
-        .pnlm-hs-yukari::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 14 12 10 16 14'/%3E%3C/svg%3E") !important;
-        }
-        /* Aşağı */
-        .pnlm-hs-asagi::after {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10' stroke='rgba(255,255,255,0.4)'/%3E%3Cpolyline points='8 10 12 14 16 10'/%3E%3C/svg%3E") !important;
+        .pnlm-hs-asagi {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0,0,0,0.25)' stroke='white' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Cpolyline points='14 17 22 27 30 17' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
         }
 
-        /* Pulse — sadece dış halka, no fill */
         @keyframes hs-pulse {
-          0%,100% { filter: drop-shadow(0 0 0px rgba(255,255,255,0)); }
-          50% { filter: drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 1; }
         }
-        .pnlm-hs::after { animation: hs-pulse 2.5s infinite !important; }
 
-        .pnlm-tooltip { font-family: Poppins, sans-serif !important; font-size: 12px !important; font-weight: 500 !important; border-radius: 8px !important; padding: 5px 12px !important; background: rgba(0,0,0,0.7) !important; }
+        /* Pannellum tooltip */
+        .pnlm-tooltip span {
+          font-family: Poppins, sans-serif !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+          background: rgba(0,0,0,0.7) !important;
+          border-radius: 6px !important;
+          padding: 4px 10px !important;
+          color: white !important;
+          white-space: nowrap !important;
+        }
+        .pnlm-tooltip span:first-child { display: none !important; }
+
         .pnlm-load-box { display: none !important; }
         .pnlm-ui .pnlm-controls-container { display: none !important; }
 
         @media (max-width: 767px) {
-          .pnlm-hs { width: 54px !important; height: 54px !important; margin: -27px 0 0 -27px !important; }
-          .pnlm-hs::after { width: 42px !important; height: 42px !important; }
+          .pnlm-hs { width: 52px !important; height: 52px !important; margin: -26px 0 0 -26px !important; }
         }
       `}</style>
     </div>
