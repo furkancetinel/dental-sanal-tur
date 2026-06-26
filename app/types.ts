@@ -3,6 +3,7 @@ export interface Hotspot {
   yaw: number;
   pitch: number;
   baslik: string;
+  tip?: "ileri" | "geri" | "kapi" | "yukari" | "asagi"; // ikon tipi
 }
 
 export interface Oda {
@@ -25,5 +26,6 @@ export interface TourConfig {
   renk: string;
   website: string;
   telefon: string;
+  baslangicOdaId?: string; // ilk açılacak oda
   odalar: Oda[];
 }

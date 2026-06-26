@@ -272,7 +272,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
             <div className="flex items-center justify-center h-full text-gray-400 text-sm">Soldan bir firma seçin</div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900">{aktifFirma.klinikAdi}</h1>
                   <a href={`/${aktifFirma.id}`} target="_blank" className="text-xs mt-0.5 hover:underline" style={{ color: "#f0851b" }}>
@@ -287,6 +287,31 @@ export default function AdminClient({ initialKlinikler }: Props) {
                   + Oda Ekle
                 </button>
               </div>
+
+              {/* Başlangıç odası seçimi */}
+              {aktifFirma.odalar.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
+                  <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">🚪 Giriş Odası</span>
+                  <select
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-white"
+                    value={aktifFirma.baslangicOdaId ?? aktifFirma.odalar[0]?.id ?? ""}
+                    onChange={async (e) => {
+                      const res = await fetch("/api/admin/klinik/ayar", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ klinikId: aktifFirma.id, baslangicOdaId: e.target.value }),
+                      });
+                      if (res.ok) { await fetchFirmalar(aktifFirma.id); flash("Giriş odası güncellendi ✓"); }
+                    }}
+                  >
+                    {aktifFirma.odalar.map(o => (
+                      <option key={o.id} value={o.id}>{o.baslik}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-400 whitespace-nowrap">Tur bu odadan başlar</span>
+                </div>
+              )}
+
 
               {yeniOdaForm && (
                 <div className="bg-orange-50 border border-orange-100 rounded-xl p-5 mb-6">

@@ -20,6 +20,7 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
   const [pending, setPending] = useState<{ yaw: number; pitch: number } | null>(null);
   const [hedefOda, setHedefOda] = useState("");
   const [hedefBaslik, setHedefBaslik] = useState("");
+  const [hedefTip, setHedefTip] = useState("ilerleme");
   const [loaded, setLoaded] = useState(false);
   const modeRef = useRef(mode);
   modeRef.current = mode;
@@ -122,8 +123,8 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
   function addHotspot() {
     if (!pending || !hedefOda) return;
     const baslik = hedefBaslik || tumOdalar.find((o) => o.id === hedefOda)?.baslik || hedefOda;
-    setHotspotlar((prev) => [...prev, { hedef: hedefOda, yaw: pending.yaw, pitch: pending.pitch, baslik }]);
-    setPending(null); setHedefOda(""); setHedefBaslik(""); setMode("view");
+    setHotspotlar((prev) => [...prev, { hedef: hedefOda, yaw: pending.yaw, pitch: pending.pitch, baslik, tip: hedefTip as any }]);
+    setPending(null); setHedefOda(""); setHedefBaslik(""); setHedefTip("ilerleme"); setMode("view");
   }
 
   const diger = tumOdalar.filter((o) => o.id !== oda.id);
@@ -233,6 +234,28 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
                   <option value="">Hedef oda seçin...</option>
                   {diger.map((o) => <option key={o.id} value={o.id}>{o.baslik}</option>)}
                 </select>
+                {/* İkon tipi seçimi */}
+                <p className="text-xs text-gray-500 mb-1">İkon tipi</p>
+                <div className="grid grid-cols-5 gap-1 mb-2">
+                  {[
+                    { val: "ilerleme", label: "→", title: "İlerleme" },
+                    { val: "ileri", label: "↑", title: "İleri" },
+                    { val: "geri", label: "↓", title: "Geri" },
+                    { val: "kapi", label: "🚪", title: "Kapı" },
+                    { val: "yukari", label: "⌃", title: "Yukarı" },
+                  ].map(({ val, label, title }) => (
+                    <button
+                      key={val}
+                      onClick={() => setHedefTip(val)}
+                      title={title}
+                      className="py-1.5 rounded-lg text-sm border transition-all"
+                      style={hedefTip === val
+                        ? { background: "#f0851b", color: "white", borderColor: "#f0851b" }
+                        : { background: "white", color: "#666", borderColor: "#fbd5a8" }
+                      }
+                    >{label}</button>
+                  ))}
+                </div>
                 <input
                   type="text"
                   placeholder="Buton yazısı (opsiyonel)"
