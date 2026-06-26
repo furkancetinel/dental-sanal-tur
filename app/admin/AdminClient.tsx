@@ -62,14 +62,14 @@ export default function AdminClient({ initialKlinikler }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(firmaForm),
       });
-      if (!res.ok) throw new Error();
-      const yeni: TourConfig = await res.json();
-      await fetchFirmalar(yeni.id);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      await fetchFirmalar(data.id);
       setFirmaForm({ klinikAdi: "", logo: "", website: "", telefon: "" });
       setYeniFirmaForm(false);
       flash("Firma eklendi ✓");
-    } catch {
-      flash("Hata oluştu", "error");
+    } catch (e: any) {
+      flash(`Hata: ${e.message}`, "error");
     }
     setSaving(false);
   }
