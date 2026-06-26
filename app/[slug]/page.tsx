@@ -9,9 +9,13 @@ interface Props {
 }
 
 function getConfig(slug: string): TourConfig | null {
-  const configPath = path.join(process.cwd(), "public/tours", slug, "config.json");
-  if (!fs.existsSync(configPath)) return null;
-  return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  try {
+    const configPath = path.join(process.cwd(), "public/tours", slug, "config.json");
+    if (!fs.existsSync(configPath)) return null;
+    return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: Props) {

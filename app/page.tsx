@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import fs from "fs";
 import path from "path";
 import { TourConfig } from "./types";
@@ -18,16 +18,20 @@ function getKlinikler(): TourConfig[] {
 
 export default function Home() {
   const klinikler = getKlinikler();
+  // Tek klinik varsa direkt yönlendir
+  if (klinikler.length === 1) {
+    redirect(`/${klinikler[0].id}`);
+  }
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
+    <main style={{ fontFamily: "Poppins, sans-serif" }} className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
       <div className="max-w-2xl w-full">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">Sanal Tur Sistemi</h1>
         <p className="text-gray-500 text-sm mb-8">Aktif klinik turları</p>
         <div className="grid gap-4">
           {klinikler.map((k) => (
-            <Link
+            <a
               key={k.id}
-              href={"/tur/" + k.id}
+              href={`/${k.id}`}
               className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition-all group"
             >
               <div className="flex items-center gap-4">
@@ -46,7 +50,7 @@ export default function Home() {
               <span className="text-blue-600 text-sm font-medium group-hover:translate-x-1 transition-transform">
                 Turu Aç →
               </span>
-            </Link>
+            </a>
           ))}
           {klinikler.length === 0 && (
             <div className="text-center py-16 text-gray-400 text-sm">Henüz klinik eklenmemiş.</div>
