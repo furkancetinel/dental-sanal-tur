@@ -133,31 +133,21 @@ export default function TourViewer({ config }: Props) {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628" }}>
-      {/* Topbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 60 }}>
-        {/* Mobil: hamburger sol, logo orta */}
-        <button className="md:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
+      {/* Topbar — sadece mobilde görünür */}
+      <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
+        <button className="w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
         </button>
-
-        {/* Mobilde logo ortada */}
-        <div className="md:hidden absolute left-1/2 -translate-x-1/2">
+        <div className="absolute left-1/2 -translate-x-1/2">
           {!logoError && config.logo ? (
             <img src={config.logo} alt={config.klinikAdi} className="h-9 w-auto object-contain max-w-[160px]" onError={() => setLogoError(true)} />
           ) : (
             <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>
           )}
         </div>
-
-        {/* Desktop: sadece badge */}
-        <div className="hidden md:flex items-center justify-end w-full">
-          <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full font-medium">360° Sanal Tur</span>
-        </div>
-
-        {/* Mobil sağ boşluk dengesi */}
-        <div className="w-8 md:hidden" />
+        <div className="w-8" />
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
