@@ -82,13 +82,43 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
       hotSpots: buildHotspotDefs(hotspotlar),
     });
 
-    pannellumRef.current.on("mouseup", (_: any, coords: any) => {
-      if (!modeRef.current || modeRef.current !== "add" || !coords) return;
-      setPending({
-        yaw: Math.round(coords.yaw * 10) / 10,
-        pitch: Math.round(coords.pitch * 10) / 10,
-      });
-    });
+    // DOM click listener — pannellum mouseup event coords güvenilir değil
+    const container = viewerRef.current;
+    const clickHandler = (e: MouseEvent) => {
+      if (modeRef.current !== "add") return;
+      if (!pannellumRef.current) return;
+      // Tıklanan pozisyonu pannellum koordinatlarına çevir
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      try {
+        const coords = pannellumRef.current.mouseEventToCoords(e);
+        if (coords) {
+          setPending({
+            yaw: Math.round(coords[1] * 10) / 10,
+            pitch: Math.round(coords[0] * 10) / 10,
+          });
+        }
+      } catch {
+        // mouseEventToCoords yoksa manuel hesapla
+        const pitch = pannellumRef.current.getPitch();
+        const yaw = pannellumRef.current.getYaw();
+        const hfov = pannellumRef.current.getHfov();
+        const w = rect.width;
+        const h = rect.height;
+        const dx = (x / w - 0.5) * hfov;
+        const dy = -(y / h - 0.5) * hfov * (h / w);
+        setPending({
+          yaw: Math.round((yaw + dx) * 10) / 10,
+          pitch: Math.round((pitch + dy) * 10) / 10,
+        });
+      }
+    };
+
+    container.addEventListener("click", clickHandler);
+    // Cleanup için ref'e kaydet
+    (pannellumRef.current as any)._clickHandler = clickHandler;
+    (pannellumRef.current as any)._container = container;
   }
 
   function rebuildHotspots() {
@@ -96,6 +126,10 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
     const curYaw = pannellumRef.current.getYaw();
     const curPitch = pannellumRef.current.getPitch();
     const curHfov = pannellumRef.current.getHfov();
+    // Eski click listener'ı temizle
+    if ((pannellumRef.current as any)._clickHandler) {
+      (pannellumRef.current as any)._container?.removeEventListener("click", (pannellumRef.current as any)._clickHandler);
+    }
     initViewer(curYaw, curPitch, curHfov);
   }
 
@@ -124,25 +158,14 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
 
   function initViewer2(startYaw: number, startPitch: number, startHfov: number) {
     if (!viewerRef.current) return;
-    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
-    pannellumRef.current = (window as any).pannellum.viewer(viewerRef.current, {
-      type: "equirectangular",
-      panorama: oda.foto,
-      autoLoad: true,
-      yaw: startYaw,
-      pitch: startPitch,
-      hfov: startHfov,
-      minHfov: 10,
-      maxHfov: 170,
-      showZoomCtrl: false,
-      showFullscreenCtrl: false,
-      showControls: false,
-      hotSpots: buildHotspotDefs(hotspotlar),
-    });
-    pannellumRef.current.on("mouseup", (_: any, coords: any) => {
-      if (!modeRef.current || modeRef.current !== "add" || !coords) return;
-      setPending({ yaw: Math.round(coords.yaw * 10) / 10, pitch: Math.round(coords.pitch * 10) / 10 });
-    });
+    if (pannellumRef.current) {
+      if ((pannellumRef.current as any)._clickHandler) {
+        (pannellumRef.current as any)._container?.removeEventListener("click", (pannellumRef.current as any)._clickHandler);
+      }
+      try { pannellumRef.current.destroy(); } catch {}
+      pannellumRef.current = null;
+    }
+    initViewer(startYaw, startPitch, startHfov);
   }
 
   function setStartPosition() {
