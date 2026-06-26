@@ -15,7 +15,15 @@ export async function GET(
   try {
     const { fotoyolu } = await params;
     const toursDir = getToursDir();
-    const filePath = path.resolve(path.join(toursDir, ...fotoyolu));
+
+    // fotoyolu = [klinikId, dosyaAdi]
+    // Gerçek path: /data/tours/klinikId/photos/dosyaAdi
+    let filePath: string;
+    if (fotoyolu.length === 2) {
+      filePath = path.resolve(path.join(toursDir, fotoyolu[0], "photos", fotoyolu[1]));
+    } else {
+      filePath = path.resolve(path.join(toursDir, ...fotoyolu));
+    }
 
     // Path traversal koruması
     if (!filePath.startsWith(path.resolve(toursDir))) {
