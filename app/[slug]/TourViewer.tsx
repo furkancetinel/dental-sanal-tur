@@ -94,8 +94,18 @@ export default function TourViewer({ config }: Props) {
     if (pannellumLoaded) initViewer(activeOda);
   }, [pannellumLoaded]);
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ showLogo = false }: { showLogo?: boolean }) => (
     <>
+      {/* Desktop: logo sidebar üstünde ortalı */}
+      {showLogo && (
+        <div className="flex items-center justify-center px-4 py-4 border-b border-gray-100">
+          {!logoError && config.logo ? (
+            <img src={config.logo} alt={config.klinikAdi} className="h-10 w-auto object-contain max-w-[160px]" onError={() => setLogoError(true)} />
+          ) : (
+            <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
+          )}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto">
         {Object.entries(kategoriler).map(([kat, odalar]) => (
           <div key={kat}>
@@ -125,33 +135,35 @@ export default function TourViewer({ config }: Props) {
     <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628" }}>
       {/* Topbar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 60 }}>
-        <div className="flex items-center gap-3">
-          {/* Mobil hamburger - solda */}
-          <button className="md:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
-            <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-            <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-            <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-          </button>
-        </div>
+        {/* Mobil: hamburger sol, logo orta */}
+        <button className="md:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
+          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
+          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
+          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
+        </button>
 
-        {/* Logo - desktop solda, mobilde tam ortada */}
-        <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:left-auto">
+        {/* Mobilde logo ortada */}
+        <div className="md:hidden absolute left-1/2 -translate-x-1/2">
           {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-10 w-auto object-contain max-w-[180px]" onError={() => setLogoError(true)} />
+            <img src={config.logo} alt={config.klinikAdi} className="h-9 w-auto object-contain max-w-[160px]" onError={() => setLogoError(true)} />
           ) : (
             <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>
           )}
         </div>
 
-        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full font-medium hidden sm:block">360° Sanal Tur</span>
-        {/* Mobilde sağ taraf boşluk dengesi için */}
+        {/* Desktop: sadece badge */}
+        <div className="hidden md:flex items-center justify-end w-full">
+          <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full font-medium">360° Sanal Tur</span>
+        </div>
+
+        {/* Mobil sağ boşluk dengesi */}
         <div className="w-8 md:hidden" />
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Sidebar */}
         <div className="hidden md:flex w-52 bg-white border-r border-gray-100 flex-col flex-shrink-0">
-          <SidebarContent />
+          <SidebarContent showLogo={true} />
         </div>
 
         {/* Mobile Sidebar */}
@@ -162,7 +174,7 @@ export default function TourViewer({ config }: Props) {
                 <span className="text-sm font-semibold text-gray-700">Odalar</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-gray-400 text-xl">✕</button>
               </div>
-              <SidebarContent />
+              <SidebarContent showLogo={false} />
             </div>
             <div className="flex-1 bg-black/40" onClick={() => setSidebarOpen(false)} />
           </div>
