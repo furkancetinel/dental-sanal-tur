@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { TourConfig } from "../types";
 import TourViewer from "./TourViewer";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
