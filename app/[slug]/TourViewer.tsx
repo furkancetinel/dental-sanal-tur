@@ -96,11 +96,10 @@ export default function TourViewer({ config }: Props) {
 
   const SidebarContent = ({ showLogo = false }: { showLogo?: boolean }) => (
     <>
-      {/* Desktop: logo sidebar üstünde ortalı */}
       {showLogo && (
-        <div className="flex items-center justify-center px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-center px-4 py-5">
           {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-10 w-auto object-contain max-w-[160px]" onError={() => setLogoError(true)} />
+            <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
           ) : (
             <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
           )}
@@ -128,6 +127,12 @@ export default function TourViewer({ config }: Props) {
           </div>
         ))}
       </div>
+      {/* Turuncu360 beyaz logo — en alta */}
+      {showLogo && (
+        <div className="px-4 py-4 flex items-center justify-center">
+          <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-8 w-auto opacity-90" />
+        </div>
+      )}
     </>
   );
 
@@ -142,7 +147,7 @@ export default function TourViewer({ config }: Props) {
         </button>
         <div className="absolute left-1/2 -translate-x-1/2">
           {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-9 w-auto object-contain max-w-[160px]" onError={() => setLogoError(true)} />
+            <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
           ) : (
             <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>
           )}
