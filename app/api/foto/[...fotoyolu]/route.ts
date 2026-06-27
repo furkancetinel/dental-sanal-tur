@@ -42,6 +42,8 @@ export async function GET(
       headers: {
         "Content-Type": mime,
         "Cache-Control": "public, max-age=3600",
+        "Access-Control-Allow-Origin": "*",
+        "Cross-Origin-Resource-Policy": "cross-origin",
       },
     });
   } catch {

@@ -212,6 +212,8 @@ export default function TourViewer({ config }: Props) {
       showFullscreenCtrl: false,
       showControls: false,
       hotSpots: [],
+      crossOrigin: "anonymous",
+      friction: 0.15,
     });
 
     // load eventi + fallback timer (yavaş internet için)
