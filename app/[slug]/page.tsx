@@ -14,9 +14,7 @@ export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const config = getKlinik(slug);
   const title = config ? `${config.klinikAdi} - Sanal Tur` : "Sanal Tur";
-  const description = config
-    ? `${config.klinikAdi} 360° sanal turunu keşfedin. Klinik odalarını, bekleme salonunu ve tüm alanları sanal olarak gezin.`
-    : "360° Sanal Tur";
+  const description = config ? `${config.klinikAdi} · 360° Sanal Tur` : "360° Sanal Tur";
   const url = `https://sanaltur.turuncu360.com/${slug}`;
 
   return {
