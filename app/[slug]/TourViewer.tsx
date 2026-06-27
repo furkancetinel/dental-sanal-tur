@@ -303,9 +303,14 @@ export default function TourViewer({ config }: Props) {
             })}
           </div>
 
-          {/* Oda badge — sağ alt */}
+          {/* Turuncu360 logo — sağ alt */}
+          <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
+            <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-8 w-auto" />
+          </div>
+
+          {/* Oda badge — sol alt */}
           {!loading && (
-            <div className="absolute bottom-14 right-4 sm:bottom-5 sm:right-5 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white pointer-events-none z-10">
+            <div className="absolute bottom-14 left-4 sm:bottom-5 sm:left-5 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white pointer-events-none z-10">
               <p className="text-sm font-semibold leading-tight">{activeOda.baslik}</p>
               {activeOda.aciklama && <p className="text-xs text-white/60 mt-0.5">{activeOda.aciklama}</p>}
             </div>
