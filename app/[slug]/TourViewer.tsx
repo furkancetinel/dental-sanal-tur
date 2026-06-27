@@ -111,6 +111,7 @@ export default function TourViewer({ config }: Props) {
   })();
   const [activeOda, setActiveOda] = useState<Oda>(baslangicOda);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -195,6 +196,7 @@ export default function TourViewer({ config }: Props) {
     if (!win.pannellum) return;
     if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
     setLoading(true);
+    setLoadError(false);
     setHsPositions([]);
 
     pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
@@ -220,10 +222,17 @@ export default function TourViewer({ config }: Props) {
       setLoading(false);
       startLoop();
     };
+    const onError = (e: any) => {
+      console.error("Pannellum error:", e);
+      if (loaded) return;
+      loaded = true;
+      setLoading(false);
+      setLoadError(true);
+    };
     pannellumRef.current.on("load", onLoad);
-    pannellumRef.current.on("error", onLoad);
-    // Max 15sn sonra yine de göster
-    setTimeout(() => onLoad(), 15000);
+    pannellumRef.current.on("error", onError);
+    // Max 20sn sonra yine de göster
+    setTimeout(() => onLoad(), 20000);
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
@@ -293,12 +302,25 @@ export default function TourViewer({ config }: Props) {
         {/* Viewer — kalan alanı tam doldurur */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#1a1a1a" }}>
           {/* Loading */}
+          {loadError && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 text-white px-8 text-center">
+              <p className="text-4xl mb-4">⚠️</p>
+              <p className="font-semibold text-lg mb-2">Fotoğraf yüklenemedi</p>
+              <p className="text-white/60 text-sm mb-6">İnternet bağlantınızı kontrol edin</p>
+              <button
+                onClick={() => { setLoadError(false); initViewer(activeOda); }}
+                className="px-6 py-2.5 rounded-xl text-white font-medium text-sm"
+                style={{ background: "#f0851b" }}
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          )}
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
-              {/* Progress bar animasyonu */}
               <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 12s ease-in-out forwards" }} />
               </div>
