@@ -201,6 +201,7 @@ export default function TourViewer({ config }: Props) {
     smoothPositionsRef.current = [];
 
     // Adaptive quality — thumb → medium → full
+    // Thumb yoksa direkt full'dan başla
     const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
@@ -208,9 +209,11 @@ export default function TourViewer({ config }: Props) {
     let loaded = false;
     let qualityTimer: ReturnType<typeof setTimeout>;
 
-    function loadViewer(url: string, onSuccess: () => void) {
-      if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
-
+    function loadViewer(url: string, onSuccess?: () => void) {
+      if (pannellumRef.current) {
+        try { pannellumRef.current.destroy(); } catch {}
+        pannellumRef.current = null;
+      }
       pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
         type: "equirectangular",
         panorama: url,
@@ -227,35 +230,37 @@ export default function TourViewer({ config }: Props) {
         crossOrigin: "anonymous",
         friction: 0.15,
       });
-
       pannellumRef.current.on("load", () => {
         if (!loaded) { loaded = true; setLoading(false); startLoop(); }
-        onSuccess();
+        onSuccess?.();
       });
       pannellumRef.current.on("error", () => {
-        if (!loaded) { loaded = true; setLoading(false); setLoadError(true); }
+        // Thumb yoksa full'a geç
+        if (url === thumbUrl) {
+          loadViewer(fullUrl);
+        } else if (!loaded) {
+          loaded = true;
+          setLoading(false);
+          setLoadError(true);
+        }
       });
     }
 
-    // 1. Thumb ile başla — hızlı
+    // Thumb ile başlamayı dene, başarılıysa kalite yükselt
     loadViewer(thumbUrl, () => {
-      // 2. 1sn sonra medium
       qualityTimer = setTimeout(() => {
         loadViewer(mediumUrl, () => {
-          // 3. 2sn sonra full kalite
           qualityTimer = setTimeout(() => {
-            loadViewer(fullUrl, () => {});
+            loadViewer(fullUrl);
           }, 2000);
         });
-      }, 1000);
+      }, 1500);
     });
 
-    // Fallback: thumb yoksa direkt full
+    // 25sn fallback
     setTimeout(() => {
-      if (!loaded) { loaded = true; loadViewer(fullUrl, () => { setLoading(false); startLoop(); }); }
-    }, 3000);
-
-    return () => clearTimeout(qualityTimer);
+      if (!loaded) { loaded = true; setLoading(false); }
+    }, 25000);
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
