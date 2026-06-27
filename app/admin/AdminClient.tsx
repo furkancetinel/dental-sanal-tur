@@ -150,12 +150,35 @@ export default function AdminClient({ initialKlinikler }: Props) {
     setSaving(false);
   }
 
+  async function compressImage(file: File, maxWidth: number, quality: number): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+        }, "image/jpeg", quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
   async function fotografYukle(file: File, odaId: string) {
     if (!aktifFirma) return;
     setUploadingOda(odaId);
     try {
+      // Sıkıştır — max 4096px, 0.85 kalite (iPhone uyumluluğu için)
+      const compressed = await compressImage(file, 4096, 0.85);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed, compressed.name);
       fd.append("klinikId", aktifFirma.id);
       fd.append("odaId", odaId);
       const res = await fetch("/api/admin/fotograf", { method: "POST", body: fd });
