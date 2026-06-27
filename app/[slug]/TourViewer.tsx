@@ -288,13 +288,13 @@ export default function TourViewer({ config }: Props) {
                       filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
                     }}
                   >
-                    <svg width="52" height="34" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    <svg width="70" height="46" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
                       style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
                     >
                       <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
                     </svg>
-                    <svg width="52" height="34" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginTop: -14, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
+                    <svg width="70" height="46" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginTop: -18, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
                     >
                       <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
