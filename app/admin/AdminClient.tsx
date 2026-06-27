@@ -163,7 +163,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
         canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
         canvas.toBlob((blob) => {
           if (!blob) { resolve(file); return; }
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+          resolve(new File([blob], `out.jpg`, { type: "image/jpeg" }));
         }, "image/jpeg", quality);
       };
       img.onerror = () => resolve(file);
@@ -171,21 +171,32 @@ export default function AdminClient({ initialKlinikler }: Props) {
     });
   }
 
+  async function uploadVersion(file: File, klinikId: string, odaId: string, quality: string): Promise<void> {
+    const fd = new FormData();
+    fd.append("file", file, "photo.jpg");
+    fd.append("klinikId", klinikId);
+    fd.append("odaId", odaId);
+    fd.append("quality", quality);
+    const res = await fetch("/api/admin/fotograf", { method: "POST", body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+  }
+
   async function fotografYukle(file: File, odaId: string) {
     if (!aktifFirma) return;
     setUploadingOda(odaId);
     try {
-      // Sıkıştır — max 4096px, 0.85 kalite (iPhone uyumluluğu için)
-      const compressed = await compressImage(file, 4096, 0.85);
-      const fd = new FormData();
-      fd.append("file", compressed, compressed.name);
-      fd.append("klinikId", aktifFirma.id);
-      fd.append("odaId", odaId);
-      const res = await fetch("/api/admin/fotograf", { method: "POST", body: fd });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Yükleme hatası");
-      }
+      // 3 versiyon: thumb (hızlı), medium (orta), full (orijinal kalite)
+      const [thumb, medium, full] = await Promise.all([
+        compressImage(file, 1024, 0.75),
+        compressImage(file, 2048, 0.88),
+        compressImage(file, 8192, 1.0),
+      ]);
+      await uploadVersion(thumb,  aktifFirma.id, odaId, "thumb");
+      await uploadVersion(medium, aktifFirma.id, odaId, "medium");
+      await uploadVersion(full,   aktifFirma.id, odaId, "full");
       await fetchFirmalar(aktifFirma.id);
       flash("Fotoğraf yüklendi ✓");
     } catch (e: any) {

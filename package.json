@@ -20,8 +20,7 @@
     "next-auth": "^5.0.0-beta.31",
     "pannellum": "^2.5.7",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "sharp": "^0.35.2"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
