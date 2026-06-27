@@ -207,7 +207,6 @@ export default function TourViewer({ config }: Props) {
         </div>
         <div className="w-8" />
       </div>
-
       <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
         {/* Desktop Sidebar — memo ile RAF re-render'dan korunuyor */}
         <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, overflow: "hidden", zIndex: 10 }}>
@@ -313,17 +312,9 @@ export default function TourViewer({ config }: Props) {
 
           {/* Drag hint */}
           {!loading && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:bottom-5 bg-black/50 text-white/75 text-xs px-4 py-1.5 rounded-full pointer-events-none z-10 flex items-center gap-1.5">
-              <span>↔</span>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:bottom-5 bg-black/50 text-white/75 text-xs px-4 py-1.5 rounded-full pointer-events-none z-10">
               <span className="hidden sm:inline">Sürükleyerek gezdirin</span>
-              <span className="sm:hidden">Kaydır</span>
-            </div>
-          )}
-
-          {/* Mobil oda adı */}
-          {!loading && (
-            <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 bg-black/55 text-white text-xs px-4 py-1.5 rounded-full pointer-events-none z-10 font-medium">
-              {activeOda.baslik}
+              <span className="sm:hidden">Kaydırın</span>
             </div>
           )}
         </div>
