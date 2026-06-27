@@ -28,23 +28,26 @@ const TIP_ROTATION: Record<string, string> = {
   asagi:    "rotate(180deg)",  // aşağı ↓
 };
 
-const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom }: {
+const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom, showLogo = true }: {
   config: TourConfig;
   kategoriler: Record<string, Oda[]>;
   activeOdaId: string;
   logoError: boolean;
   setLogoError: (v: boolean) => void;
   onRoom: (oda: Oda) => void;
+  showLogo?: boolean;
 }) {
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
-        {!logoError && config.logo ? (
-          <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
-        ) : (
-          <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
-        )}
-      </div>
+      {showLogo && (
+        <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
+          {!logoError && config.logo ? (
+            <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
+          ) : (
+            <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
+          )}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto min-h-0">
         {Object.entries(kategoriler).map(([kat, odalar]) => (
           <div key={kat}>
@@ -217,11 +220,11 @@ export default function TourViewer({ config }: Props) {
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-30 flex">
             <div className="w-64 bg-white flex flex-col shadow-2xl" style={{ overflow: "hidden" }}>
-              <div className="flex items-center justify-end px-4 py-3 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center justify-end px-4 pt-4 pb-2 flex-shrink-0">
                 <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
-                <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
+                <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={false} />
               </div>
             </div>
             <div className="flex-1 bg-black/40" onClick={() => setSidebarOpen(false)} />
