@@ -31,18 +31,18 @@ const TIP_ROTATION: Record<string, string> = {
 };
 
 // Kapı tipleri için özel SVG
-const KAPI_SVG_GIR = `<svg width="70" height="46" viewBox="0 0 70 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="18" y="4" width="34" height="38" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.1)"/>
-  <line x1="18" y1="4" x2="18" y2="42" stroke="white" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="46" cy="23" r="2.5" fill="white"/>
-  <polyline points="8 23 28 13 28 33 8 23" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+const KAPI_SVG_GIR = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.12)"/>
+  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="38" cy="30" r="3" fill="white"/>
+  <polyline points="4 30 18 22 18 38 4 30" stroke="white" stroke-width="3" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
 </svg>`;
 
-const KAPI_SVG_CIK = `<svg width="70" height="46" viewBox="0 0 70 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="18" y="4" width="34" height="38" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.1)"/>
-  <line x1="18" y1="4" x2="18" y2="42" stroke="white" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="46" cy="23" r="2.5" fill="white"/>
-  <polyline points="62 23 42 13 42 33 62 23" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+const KAPI_SVG_CIK = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.12)"/>
+  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="38" cy="30" r="3" fill="white"/>
+  <polyline points="56 30 42 22 42 38 56 30" stroke="white" stroke-width="3" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
 </svg>`;
 
 const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom, showLogo = true }: {
@@ -303,8 +303,7 @@ export default function TourViewer({ config }: Props) {
                     <div
                       className="cursor-pointer"
                       style={{
-                        transform: `scaleY(${scaleY})`,
-                        filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
+                        filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.8))",
                       }}
                       dangerouslySetInnerHTML={{ __html: tip === "kapi-cik" ? KAPI_SVG_CIK : KAPI_SVG_GIR }}
                     />
