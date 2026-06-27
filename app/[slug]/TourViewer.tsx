@@ -209,11 +209,21 @@ export default function TourViewer({ config }: Props) {
       showZoomCtrl: false,
       showFullscreenCtrl: false,
       showControls: false,
-      hotSpots: [], // pannellum hotspot YOK — biz yönetiyoruz
+      hotSpots: [],
     });
 
-    pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
-    pannellumRef.current.on("error", () => setLoading(false));
+    // load eventi + fallback timer (yavaş internet için)
+    let loaded = false;
+    const onLoad = () => {
+      if (loaded) return;
+      loaded = true;
+      setLoading(false);
+      startLoop();
+    };
+    pannellumRef.current.on("load", onLoad);
+    pannellumRef.current.on("error", onLoad);
+    // Max 15sn sonra yine de göster
+    setTimeout(() => onLoad(), 15000);
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
@@ -288,6 +298,10 @@ export default function TourViewer({ config }: Props) {
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
+              {/* Progress bar animasyonu */}
+              <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 12s ease-in-out forwards" }} />
+              </div>
             </div>
           )}
 
@@ -383,6 +397,13 @@ export default function TourViewer({ config }: Props) {
 
       <style>{`
         .pnlm-container { background: #1a1a1a !important; }
+        @keyframes progress-bar {
+          0% { width: 0%; }
+          30% { width: 40%; }
+          70% { width: 75%; }
+          90% { width: 90%; }
+          100% { width: 95%; }
+        }
         @keyframes hs-arrow-1 {
           0%, 100% { opacity: 0.2; transform: translateY(4px); }
           50% { opacity: 0.5; transform: translateY(0px); }
