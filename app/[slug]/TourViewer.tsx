@@ -189,7 +189,7 @@ export default function TourViewer({ config }: Props) {
   }, [pannellumLoaded]);
 
   return (
-    <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#0a1628" }}>
+    <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#111" }}>
 
       {/* Topbar — sadece mobil */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
@@ -230,7 +230,7 @@ export default function TourViewer({ config }: Props) {
         )}
 
         {/* Viewer — kalan alanı tam doldurur */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0 }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#000" }}>
           {/* Loading */}
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
