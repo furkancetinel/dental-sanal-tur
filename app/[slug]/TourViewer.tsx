@@ -101,7 +101,14 @@ export default function TourViewer({ config }: Props) {
   const pannellumRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
 
-  const baslangicOda = config.odalar.find(o => o.id === config.baslangicOdaId) ?? config.odalar[0];
+  const baslangicOda = (() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      const found = config.odalar.find(o => o.id === hash);
+      if (found) return found;
+    }
+    return config.odalar.find(o => o.id === config.baslangicOdaId) ?? config.odalar[0];
+  })();
   const [activeOda, setActiveOda] = useState<Oda>(baslangicOda);
   const [loading, setLoading] = useState(true);
   const [logoError, setLogoError] = useState(false);
@@ -200,6 +207,10 @@ export default function TourViewer({ config }: Props) {
     setActiveOda(oda);
     setSidebarOpen(false);
     cancelAnimationFrame(rafRef.current);
+    // URL hash güncelle — sayfa yenilenince buradan başlar
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${oda.id}`);
+    }
     initViewer(oda);
   }, [initViewer]);
 
@@ -315,15 +326,15 @@ export default function TourViewer({ config }: Props) {
                       filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
                     }}
                   >
-                    <svg width="70" height="46" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg"
                       style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+                      <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
                     </svg>
-                    <svg width="70" height="46" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginTop: -18, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
+                    <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginTop: -22, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+                      <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                   )}
