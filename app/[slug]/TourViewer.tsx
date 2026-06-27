@@ -220,12 +220,20 @@ export default function TourViewer({ config }: Props) {
     setActiveOda(oda);
     setSidebarOpen(false);
     cancelAnimationFrame(rafRef.current);
-    // URL hash güncelle — sayfa yenilenince buradan başlar
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `#${oda.id}`);
     }
     initViewer(oda);
-  }, [initViewer]);
+
+    // Komşu odaları preload et
+    oda.hotspotlar.forEach(h => {
+      const hedef = config.odalar.find(o => o.id === h.hedef);
+      if (hedef?.foto) {
+        const img = new Image();
+        img.src = hedef.foto;
+      }
+    });
+  }, [initViewer, config.odalar]);
 
   useEffect(() => {
     if (pannellumLoaded) initViewer(activeOda);
