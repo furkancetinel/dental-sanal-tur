@@ -67,6 +67,10 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
           </div>
         ))}
       </div>
+      {/* Renkli Turuncu360 logo — sidebar alt */}
+      <div className="flex-shrink-0 flex items-center justify-center px-4 py-4 border-t border-gray-100">
+        <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-8 w-auto" />
+      </div>
     </div>
   );
 });
@@ -232,9 +236,8 @@ export default function TourViewer({ config }: Props) {
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
-              <p className="text-white font-semibold text-base">{activeOda.baslik}</p>
+              <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
-              <img src="/turuncu360-logo.svg" alt="Turuncu360" className="h-6 w-auto mt-8 opacity-60 brightness-0 invert" />
             </div>
           )}
 
@@ -298,11 +301,6 @@ export default function TourViewer({ config }: Props) {
                 </div>
               );
             })}
-          </div>
-
-          {/* Turuncu360 logo — sol alt */}
-          <div className="absolute bottom-4 left-4 z-10 pointer-events-none">
-            <img src="/turuncu360-beyaz.svg" alt="Turuncu360" className="h-7 w-auto opacity-75" />
           </div>
 
           {/* Oda badge — sağ alt */}
