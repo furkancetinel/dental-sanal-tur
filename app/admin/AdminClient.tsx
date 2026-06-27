@@ -188,19 +188,20 @@ export default function AdminClient({ initialKlinikler }: Props) {
     if (!aktifFirma) return;
     setUploadingOda(odaId);
     try {
-      // 3 versiyon: thumb (hızlı), medium (orta), full (orijinal kalite)
-      const [thumb, medium, full] = await Promise.all([
-        compressImage(file, 1024, 0.75),
-        compressImage(file, 2048, 0.88),
-        compressImage(file, 8192, 1.0),
-      ]);
-      await uploadVersion(thumb,  aktifFirma.id, odaId, "thumb");
+      // Sıralı yükle — paralel değil (memory sorunu önleme)
+      const thumb  = await compressImage(file, 1024, 0.75);
+      await uploadVersion(thumb, aktifFirma.id, odaId, "thumb");
+
+      const medium = await compressImage(file, 2048, 0.85);
       await uploadVersion(medium, aktifFirma.id, odaId, "medium");
-      await uploadVersion(full,   aktifFirma.id, odaId, "full");
+
+      // Full = orijinal dosyayı direkt yükle, canvas'a sokma
+      await uploadVersion(file, aktifFirma.id, odaId, "full");
+
       await fetchFirmalar(aktifFirma.id);
       flash("Fotoğraf yüklendi ✓");
     } catch (e: any) {
-      flash(e.message || "Fotoğraf yüklenemedi", "error");
+      flash(`Hata: ${e.message}`, "error");
     }
     setUploadingOda(null);
   }
