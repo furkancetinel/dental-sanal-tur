@@ -69,7 +69,7 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
       </div>
       {/* Renkli Turuncu360 logo — sidebar alt */}
       <div className="flex-shrink-0 flex items-center justify-center px-4 py-4 border-t border-gray-100">
-        <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-8 w-auto" />
+        <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-12 w-auto" />
       </div>
     </div>
   );
