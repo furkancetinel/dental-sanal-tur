@@ -252,9 +252,9 @@ export default function TourViewer({ config }: Props) {
               if (!pos || !pos.visible) return null;
               const tip = h.tip || "ilerleme";
 
-              // Pitch'e göre yassılma — yerde yatan ok
-              // pitch -90 = tam yerde (scaleY=0.15), pitch 0 = göz hizası (scaleY=1)
-              const scaleY = Math.max(0.15, Math.min(1, 1 + h.pitch / 90));
+              // Zemine paralel ok — pitch ne kadar negatifse o kadar yassı
+              // scaleY: pitch=0 → 0.3 (biraz yassı), pitch=-90 → 0.08 (çok yassı)
+              const scaleY = Math.max(0.08, 0.3 + h.pitch / 120);
               const rotZ = parseFloat((TIP_ROTATION[tip] || "rotate(0deg)").replace("rotate(", "").replace("deg)", ""));
 
               return (
@@ -285,18 +285,18 @@ export default function TourViewer({ config }: Props) {
                     className="flex flex-col items-center cursor-pointer"
                     style={{
                       transform: `rotate(${rotZ}deg) scaleY(${scaleY})`,
-                      filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.7))",
+                      filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
                     }}
                   >
-                    <svg width="40" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    <svg width="52" height="34" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
                       style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="6 22 20 6 34 22" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+                      <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
                     </svg>
-                    <svg width="40" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginTop: -10, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
+                    <svg width="52" height="34" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginTop: -14, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
                     >
-                      <polyline points="6 22 20 6 34 22" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                 </div>
