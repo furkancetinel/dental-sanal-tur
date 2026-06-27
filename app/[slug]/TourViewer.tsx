@@ -198,43 +198,64 @@ export default function TourViewer({ config }: Props) {
     setLoading(true);
     setLoadError(false);
     setHsPositions([]);
+    smoothPositionsRef.current = [];
 
-    pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
-      type: "equirectangular",
-      panorama: oda.foto,
-      autoLoad: true,
-      yaw: oda.baslangicYaw ?? 0,
-      pitch: oda.baslangicPitch ?? 0,
-      hfov: oda.baslangicHfov ?? 100,
-      minHfov: 10,
-      maxHfov: 170,
-      showZoomCtrl: false,
-      showFullscreenCtrl: false,
-      showControls: false,
-      hotSpots: [],
-      crossOrigin: "anonymous",
-      friction: 0.15,
+    // Adaptive quality — thumb → medium → full
+    const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
+    const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
+    const fullUrl   = oda.foto;
+
+    let loaded = false;
+    let qualityTimer: ReturnType<typeof setTimeout>;
+
+    function loadViewer(url: string, onSuccess: () => void) {
+      if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+
+      pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
+        type: "equirectangular",
+        panorama: url,
+        autoLoad: true,
+        yaw: oda.baslangicYaw ?? 0,
+        pitch: oda.baslangicPitch ?? 0,
+        hfov: oda.baslangicHfov ?? 100,
+        minHfov: 10,
+        maxHfov: 170,
+        showZoomCtrl: false,
+        showFullscreenCtrl: false,
+        showControls: false,
+        hotSpots: [],
+        crossOrigin: "anonymous",
+        friction: 0.15,
+      });
+
+      pannellumRef.current.on("load", () => {
+        if (!loaded) { loaded = true; setLoading(false); startLoop(); }
+        onSuccess();
+      });
+      pannellumRef.current.on("error", () => {
+        if (!loaded) { loaded = true; setLoading(false); setLoadError(true); }
+      });
+    }
+
+    // 1. Thumb ile başla — hızlı
+    loadViewer(thumbUrl, () => {
+      // 2. 1sn sonra medium
+      qualityTimer = setTimeout(() => {
+        loadViewer(mediumUrl, () => {
+          // 3. 2sn sonra full kalite
+          qualityTimer = setTimeout(() => {
+            loadViewer(fullUrl, () => {});
+          }, 2000);
+        });
+      }, 1000);
     });
 
-    // load eventi + fallback timer (yavaş internet için)
-    let loaded = false;
-    const onLoad = () => {
-      if (loaded) return;
-      loaded = true;
-      setLoading(false);
-      startLoop();
-    };
-    const onError = (e: any) => {
-      console.error("Pannellum error:", e);
-      if (loaded) return;
-      loaded = true;
-      setLoading(false);
-      setLoadError(true);
-    };
-    pannellumRef.current.on("load", onLoad);
-    pannellumRef.current.on("error", onError);
-    // Max 20sn sonra yine de göster
-    setTimeout(() => onLoad(), 20000);
+    // Fallback: thumb yoksa direkt full
+    setTimeout(() => {
+      if (!loaded) { loaded = true; loadViewer(fullUrl, () => { setLoading(false); startLoop(); }); }
+    }, 3000);
+
+    return () => clearTimeout(qualityTimer);
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {

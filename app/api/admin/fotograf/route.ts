@@ -30,15 +30,22 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Sharp ile sıkıştır — max 4096px, JPEG 85 kalite
-    const compressed = await sharp(buffer)
-      .resize(4096, 2048, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 85, progressive: true })
-      .toBuffer();
+    // 3 boyut versiyonu — kalite kayıpsız (95), sadece boyut küçülür
+    const versions = [
+      { name: `${odaId}-thumb.jpg`,  width: 1024, height: 512,  quality: 85 },
+      { name: `${odaId}-medium.jpg`, width: 2048, height: 1024, quality: 92 },
+      { name: `${odaId}.jpg`,        width: 8192, height: 4096, quality: 100 }, // orijinal kalite
+    ];
 
-    fs.writeFileSync(path.join(photosDir, fileName), compressed);
+    for (const v of versions) {
+      const out = await sharp(buffer)
+        .resize(v.width, v.height, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: v.quality, progressive: true })
+        .toBuffer();
+      fs.writeFileSync(path.join(photosDir, v.name), out);
+    }
 
-    const fotoUrl = `/api/foto/${klinikId}/${fileName}`;
+    const fotoUrl = `/api/foto/${klinikId}/${odaId}.jpg`;
 
     const klinikConfig = getKlinik(klinikId);
     if (klinikConfig) {
@@ -46,7 +53,7 @@ export async function POST(req: NextRequest) {
       if (oda) { oda.foto = fotoUrl; saveKlinik(klinikConfig); }
     }
 
-    return NextResponse.json({ url: fotoUrl, size: compressed.length, original: bytes.byteLength });
+    return NextResponse.json({ url: fotoUrl });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Sunucu hatası" }, { status: 500 });
   }
