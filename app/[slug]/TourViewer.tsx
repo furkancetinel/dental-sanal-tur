@@ -68,7 +68,7 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
         ))}
       </div>
       {/* Renkli Turuncu360 logo — sidebar alt */}
-      <div className="flex-shrink-0 flex items-center justify-center px-4 py-4 border-t border-gray-100">
+      <div className="flex-shrink-0 flex items-center justify-center px-4 py-2 border-t border-gray-100">
         <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-12 w-auto" />
       </div>
     </div>
@@ -301,11 +301,6 @@ export default function TourViewer({ config }: Props) {
                 </div>
               );
             })}
-          </div>
-
-          {/* Turuncu360 logo — sağ alt */}
-          <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
-            <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-8 w-auto" />
           </div>
 
           {/* Oda badge — sol alt */}
