@@ -161,7 +161,7 @@ export default function TourViewer({ config }: Props) {
   );
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628", height: "100dvh", width: "100vw" }}>
+    <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#0a1628" }}>
 
       {/* Topbar — sadece mobil */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
@@ -180,9 +180,9 @@ export default function TourViewer({ config }: Props) {
         <div className="w-8" />
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative" style={{ minHeight: 0 }}>
-        {/* Desktop Sidebar — bağımsız scroll */}
-        <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
+        {/* Desktop Sidebar */}
+        <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, overflow: "hidden", zIndex: 10 }}>
           <SidebarContent showLogo={true} />
         </div>
 
@@ -200,8 +200,8 @@ export default function TourViewer({ config }: Props) {
           </div>
         )}
 
-        {/* Viewer — her zaman tam yükseklik */}
-        <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0, minWidth: 0 }}>
+        {/* Viewer — kalan alanı tam doldurur */}
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0 }}>
           {/* Loading */}
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
