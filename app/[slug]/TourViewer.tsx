@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { TourConfig, Oda, Hotspot } from "../types";
 
 interface Props { config: TourConfig; }
@@ -27,6 +27,49 @@ const TIP_ROTATION: Record<string, string> = {
   yukari:   "rotate(0deg)",    // yukarı ↑
   asagi:    "rotate(180deg)",  // aşağı ↓
 };
+
+const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom }: {
+  config: TourConfig;
+  kategoriler: Record<string, Oda[]>;
+  activeOdaId: string;
+  logoError: boolean;
+  setLogoError: (v: boolean) => void;
+  onRoom: (oda: Oda) => void;
+}) {
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
+        {!logoError && config.logo ? (
+          <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
+        ) : (
+          <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {Object.entries(kategoriler).map(([kat, odalar]) => (
+          <div key={kat}>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">{kat}</p>
+            {odalar.map((oda) => (
+              <button
+                key={oda.id}
+                onClick={() => onRoom(oda)}
+                className="w-full flex items-center px-4 py-2.5 text-left text-sm transition-all"
+                style={activeOdaId === oda.id
+                  ? { background: "#f0851b", color: "#fff", fontWeight: 500 }
+                  : { color: "#4b5563" }
+                }
+                onMouseEnter={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = "#fff7ed"; }}
+                onMouseLeave={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = ""; }}
+              >
+                <span className="truncate">{oda.baslik}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 export default function TourViewer({ config }: Props) {
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +108,9 @@ export default function TourViewer({ config }: Props) {
     document.head.appendChild(script);
   }, []);
 
-  // RAF loop — pannellum kamerasını okuyup hotspot pozisyonlarını güncelle
+  const hsPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
+
+  // RAF loop — sadece değişince state güncelle
   function startLoop() {
     cancelAnimationFrame(rafRef.current);
     function loop() {
@@ -77,8 +122,23 @@ export default function TourViewer({ config }: Props) {
         const rect = viewerRef.current.getBoundingClientRect();
         const aspect = rect.width / rect.height;
         const oda = activeOdaRef.current;
-        const positions = oda.hotspotlar.map(h => worldToScreen(h.yaw, h.pitch, camYaw, camPitch, hfov, aspect));
-        setHsPositions(positions);
+        const newPositions = oda.hotspotlar.map(h => worldToScreen(h.yaw, h.pitch, camYaw, camPitch, hfov, aspect));
+
+        // Sadece gerçekten değişince state'i güncelle
+        let changed = newPositions.length !== hsPositionsRef.current.length;
+        if (!changed) {
+          for (let i = 0; i < newPositions.length; i++) {
+            const p = hsPositionsRef.current[i];
+            const n = newPositions[i];
+            if (!p || Math.abs(p.x - n.x) > 0.001 || Math.abs(p.y - n.y) > 0.001 || p.visible !== n.visible) {
+              changed = true; break;
+            }
+          }
+        }
+        if (changed) {
+          hsPositionsRef.current = newPositions;
+          setHsPositions(newPositions);
+        }
       } catch {}
       rafRef.current = requestAnimationFrame(loop);
     }
@@ -112,53 +172,17 @@ export default function TourViewer({ config }: Props) {
     pannellumRef.current.on("error", () => setLoading(false));
   }, [pannellumLoaded]);
 
-  function goRoom(oda: Oda) {
+  const goRoomCb = useCallback((oda: Oda) => {
     setActiveOda(oda);
     setSidebarOpen(false);
     cancelAnimationFrame(rafRef.current);
     initViewer(oda);
-  }
+  }, [initViewer]);
 
   useEffect(() => {
     if (pannellumLoaded) initViewer(activeOda);
     return () => cancelAnimationFrame(rafRef.current);
   }, [pannellumLoaded]);
-
-  const SidebarContent = ({ showLogo = false }: { showLogo?: boolean }) => (
-    <div className="flex flex-col h-full min-h-0">
-      {showLogo && (
-        <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
-          {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
-          ) : (
-            <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
-          )}
-        </div>
-      )}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {Object.entries(kategoriler).map(([kat, odalar]) => (
-          <div key={kat}>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">{kat}</p>
-            {odalar.map((oda) => (
-              <button
-                key={oda.id}
-                onClick={() => goRoom(oda)}
-                className="w-full flex items-center px-4 py-2.5 text-left text-sm transition-all"
-                style={activeOda.id === oda.id
-                  ? { background: "#f0851b", color: "#fff", fontWeight: 500 }
-                  : { color: "#4b5563" }
-                }
-                onMouseEnter={(e) => { if (activeOda.id !== oda.id) (e.currentTarget as HTMLElement).style.background = "#fff7ed"; }}
-                onMouseLeave={(e) => { if (activeOda.id !== oda.id) (e.currentTarget as HTMLElement).style.background = ""; }}
-              >
-                <span className="truncate">{oda.baslik}</span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#0a1628" }}>
@@ -181,20 +205,22 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
-        {/* Desktop Sidebar */}
+        {/* Desktop Sidebar — memo ile RAF re-render'dan korunuyor */}
         <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, overflow: "hidden", zIndex: 10 }}>
-          <SidebarContent showLogo={true} />
+          <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
         </div>
 
         {/* Mobile Sidebar */}
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-30 flex">
-            <div className="w-64 bg-white flex flex-col shadow-2xl">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div className="w-64 bg-white flex flex-col shadow-2xl" style={{ overflow: "hidden" }}>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
                 <span className="text-sm font-semibold text-gray-700">Odalar</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-gray-400 text-xl">✕</button>
               </div>
-              <SidebarContent showLogo={false} />
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
+              </div>
             </div>
             <div className="flex-1 bg-black/40" onClick={() => setSidebarOpen(false)} />
           </div>
@@ -240,7 +266,7 @@ export default function TourViewer({ config }: Props) {
                   onMouseLeave={() => setTooltip(null)}
                   onClick={() => {
                     const hedef = config.odalar.find(o => o.id === h.hedef);
-                    if (hedef) goRoom(hedef);
+                    if (hedef) goRoomCb(hedef);
                   }}
                 >
                   {tooltip === h.baslik && (
