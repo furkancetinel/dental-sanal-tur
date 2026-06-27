@@ -20,13 +20,30 @@ function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: num
 }
 
 const TIP_ROTATION: Record<string, string> = {
-  ilerleme: "rotate(0deg)",    // yukarı ↑ (ileri)
-  ileri:    "rotate(0deg)",    // yukarı ↑
-  geri:     "rotate(180deg)",  // aşağı ↓
-  kapi:     "rotate(0deg)",    // yukarı ↑
-  yukari:   "rotate(0deg)",    // yukarı ↑
-  asagi:    "rotate(180deg)",  // aşağı ↓
+  ilerleme:  "rotate(0deg)",
+  ileri:     "rotate(0deg)",
+  geri:      "rotate(180deg)",
+  kapi:      "rotate(0deg)",
+  "kapi-gir":"rotate(0deg)",
+  "kapi-cik":"rotate(180deg)",
+  yukari:    "rotate(0deg)",
+  asagi:     "rotate(180deg)",
 };
+
+// Kapı tipleri için özel SVG
+const KAPI_SVG_GIR = `<svg width="70" height="46" viewBox="0 0 70 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="18" y="4" width="34" height="38" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.1)"/>
+  <line x1="18" y1="4" x2="18" y2="42" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="46" cy="23" r="2.5" fill="white"/>
+  <polyline points="8 23 28 13 28 33 8 23" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+</svg>`;
+
+const KAPI_SVG_CIK = `<svg width="70" height="46" viewBox="0 0 70 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="18" y="4" width="34" height="38" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.1)"/>
+  <line x1="18" y1="4" x2="18" y2="42" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="46" cy="23" r="2.5" fill="white"/>
+  <polyline points="62 23 42 13 42 33 62 23" stroke="white" stroke-width="3.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+</svg>`;
 
 const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom, showLogo = true }: {
   config: TourConfig;
@@ -281,6 +298,17 @@ export default function TourViewer({ config }: Props) {
                       {h.baslik}
                     </div>
                   )}
+                  {/* Kapı tipleri için özel ikon */}
+                  {(tip === "kapi-gir" || tip === "kapi" || tip === "kapi-cik") ? (
+                    <div
+                      className="cursor-pointer"
+                      style={{
+                        transform: `scaleY(${scaleY})`,
+                        filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: tip === "kapi-cik" ? KAPI_SVG_CIK : KAPI_SVG_GIR }}
+                    />
+                  ) : (
                   <div
                     className="flex flex-col items-center cursor-pointer"
                     style={{
@@ -299,6 +327,7 @@ export default function TourViewer({ config }: Props) {
                       <polyline points="6 28 26 6 46 28" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
+                  )}
                 </div>
               );
             })}

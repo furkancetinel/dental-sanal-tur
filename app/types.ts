@@ -3,7 +3,7 @@ export interface Hotspot {
   yaw: number;
   pitch: number;
   baslik: string;
-  tip?: "ileri" | "geri" | "kapi" | "yukari" | "asagi"; // ikon tipi
+  tip?: "ileri" | "geri" | "kapi" | "kapi-gir" | "kapi-cik" | "yukari" | "asagi" | "ilerleme";
 }
 
 export interface Oda {
