@@ -125,9 +125,9 @@ export default function TourViewer({ config }: Props) {
   }, [pannellumLoaded]);
 
   const SidebarContent = ({ showLogo = false }: { showLogo?: boolean }) => (
-    <>
+    <div className="flex flex-col h-full min-h-0">
       {showLogo && (
-        <div className="flex items-center justify-center px-4 py-5">
+        <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
           {!logoError && config.logo ? (
             <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
           ) : (
@@ -135,7 +135,7 @@ export default function TourViewer({ config }: Props) {
           )}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {Object.entries(kategoriler).map(([kat, odalar]) => (
           <div key={kat}>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">{kat}</p>
@@ -157,11 +157,11 @@ export default function TourViewer({ config }: Props) {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628" }}>
+    <div className="flex flex-col overflow-hidden" style={{ fontFamily: "Poppins, sans-serif", background: "#0a1628", height: "100dvh", width: "100vw" }}>
 
       {/* Topbar — sadece mobil */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
@@ -180,9 +180,9 @@ export default function TourViewer({ config }: Props) {
         <div className="w-8" />
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Desktop Sidebar */}
-        <div className="hidden md:flex w-52 bg-white border-r border-gray-100 flex-col flex-shrink-0">
+      <div className="flex flex-1 overflow-hidden relative" style={{ minHeight: 0 }}>
+        {/* Desktop Sidebar — bağımsız scroll */}
+        <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, minHeight: 0, overflow: "hidden" }}>
           <SidebarContent showLogo={true} />
         </div>
 
@@ -200,8 +200,8 @@ export default function TourViewer({ config }: Props) {
           </div>
         )}
 
-        {/* Viewer */}
-        <div className="flex-1 relative overflow-hidden">
+        {/* Viewer — her zaman tam yükseklik */}
+        <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0, minWidth: 0 }}>
           {/* Loading */}
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
