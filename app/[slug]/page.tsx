@@ -27,10 +27,10 @@ export async function generateMetadata({ params }: Props) {
       siteName: "Turuncu 360 - Sanal Tur",
       images: [
         {
-          url: `https://sanaltur.turuncu360.com/api/og?title=${encodeURIComponent(title)}`,
-          width: 1200,
-          height: 630,
-          alt: title,
+          url: "https://sanaltur.turuncu360.com/og-image.png",
+          width: 1080,
+          height: 1080,
+          alt: "Turuncu 360 - Sanal Tur",
         },
       ],
       type: "website",
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props) {
       card: "summary_large_image",
       title,
       description,
-      images: [`https://sanaltur.turuncu360.com/api/og?title=${encodeURIComponent(title)}`],
+      images: ["https://sanaltur.turuncu360.com/og-image.png"],
     },
   };
 }
