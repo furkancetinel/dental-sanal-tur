@@ -222,11 +222,10 @@ export default function TourViewer({ config }: Props) {
               if (!pos || !pos.visible) return null;
               const tip = h.tip || "ilerleme";
 
-              // Pitch'e göre eğim — yere yakın (-30° altı) yatay, göz hizası dik
-              const pitchClamp = Math.max(-60, Math.min(0, h.pitch));
-              const tiltX = Math.abs(pitchClamp) * 0.7; // max ~42deg eğim
-              const baseRotation = (TIP_ROTATION[tip] || "rotate(0deg)").replace("rotate(", "").replace("deg)", "");
-              const rotZ = parseFloat(baseRotation);
+              // Pitch'e göre yassılma — yerde yatan ok
+              // pitch -90 = tam yerde (scaleY=0.15), pitch 0 = göz hizası (scaleY=1)
+              const scaleY = Math.max(0.15, Math.min(1, 1 + h.pitch / 90));
+              const rotZ = parseFloat((TIP_ROTATION[tip] || "rotate(0deg)").replace("rotate(", "").replace("deg)", ""));
 
               return (
                 <div
@@ -255,8 +254,7 @@ export default function TourViewer({ config }: Props) {
                   <div
                     className="flex flex-col items-center cursor-pointer"
                     style={{
-                      transform: `rotateX(${tiltX}deg) rotateZ(${rotZ}deg)`,
-                      transformStyle: "preserve-3d",
+                      transform: `rotate(${rotZ}deg) scaleY(${scaleY})`,
                       filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.7))",
                     }}
                   >
