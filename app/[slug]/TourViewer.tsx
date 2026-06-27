@@ -32,17 +32,17 @@ const TIP_ROTATION: Record<string, string> = {
 
 // Kapı tipleri için özel SVG
 const KAPI_SVG_GIR = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.12)"/>
-  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <circle cx="38" cy="30" r="3" fill="white"/>
-  <polyline points="4 30 18 22 18 38 4 30" stroke="white" stroke-width="3" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
+  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="38" cy="30" r="2" fill="white"/>
+  <polyline points="4 30 16 23 16 37 4 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
 </svg>`;
 
 const KAPI_SVG_CIK = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="3" fill="rgba(255,255,255,0.12)"/>
-  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
-  <circle cx="38" cy="30" r="3" fill="white"/>
-  <polyline points="56 30 42 22 42 38 56 30" stroke="white" stroke-width="3" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
+  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="38" cy="30" r="2" fill="white"/>
+  <polyline points="56 30 44 23 44 37 56 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
 </svg>`;
 
 const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom, showLogo = true }: {

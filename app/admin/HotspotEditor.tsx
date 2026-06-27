@@ -299,11 +299,11 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
                 <p className="text-xs text-gray-500 mb-1">İkon tipi</p>
                 <div className="grid grid-cols-5 gap-1 mb-2">
                   {[
-                    { val: "ilerleme", label: "→", title: "İlerleme" },
-                    { val: "ileri",    label: "↑", title: "İleri" },
-                    { val: "geri",     label: "↓", title: "Geri" },
-                    { val: "kapi-gir", label: "🚪→", title: "Odaya Gir" },
-                    { val: "kapi-cik", label: "←🚪", title: "Odadan Çık" },
+                    { val: "ilerleme", label: "→",   title: "İlerleme" },
+                    { val: "ileri",    label: "↑",   title: "İleri" },
+                    { val: "geri",     label: "↓",   title: "Geri" },
+                    { val: "kapi-gir", label: "Giriş", title: "Kapı Girişi" },
+                    { val: "kapi-cik", label: "Çıkış", title: "Kapı Çıkışı" },
                   ].map(({ val, label, title }) => (
                     <button
                       key={val}
