@@ -31,14 +31,14 @@ const TIP_ROTATION: Record<string, string> = {
 };
 
 // Kapı tipleri için özel SVG
-const KAPI_SVG_GIR = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+const KAPI_SVG_GIR = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
   <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
   <circle cx="38" cy="30" r="2" fill="white"/>
   <polyline points="4 30 16 23 16 37 4 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
 </svg>`;
 
-const KAPI_SVG_CIK = `<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+const KAPI_SVG_CIK = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
   <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
   <circle cx="38" cy="30" r="2" fill="white"/>
@@ -140,8 +140,8 @@ export default function TourViewer({ config }: Props) {
   }, []);
 
   const hsPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
+  const smoothPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
 
-  // RAF loop — sadece değişince state güncelle
   function startLoop() {
     cancelAnimationFrame(rafRef.current);
     function loop() {
@@ -155,20 +155,33 @@ export default function TourViewer({ config }: Props) {
         const oda = activeOdaRef.current;
         const newPositions = oda.hotspotlar.map(h => worldToScreen(h.yaw, h.pitch, camYaw, camPitch, hfov, aspect));
 
-        // Sadece gerçekten değişince state'i güncelle
-        let changed = newPositions.length !== hsPositionsRef.current.length;
+        // Lerp smoothing — titreme önleme
+        const LERP = 0.18;
+        const smoothed = newPositions.map((p, i) => {
+          const prev = smoothPositionsRef.current[i];
+          if (!prev) return p;
+          return {
+            x: prev.x + (p.x - prev.x) * LERP,
+            y: prev.y + (p.y - prev.y) * LERP,
+            visible: p.visible,
+          };
+        });
+        smoothPositionsRef.current = smoothed;
+
+        // Sadece gerçekten değişince state güncelle
+        let changed = smoothed.length !== hsPositionsRef.current.length;
         if (!changed) {
-          for (let i = 0; i < newPositions.length; i++) {
+          for (let i = 0; i < smoothed.length; i++) {
             const p = hsPositionsRef.current[i];
-            const n = newPositions[i];
-            if (!p || Math.abs(p.x - n.x) > 0.001 || Math.abs(p.y - n.y) > 0.001 || p.visible !== n.visible) {
+            const n = smoothed[i];
+            if (!p || Math.abs(p.x - n.x) > 0.0005 || Math.abs(p.y - n.y) > 0.0005 || p.visible !== n.visible) {
               changed = true; break;
             }
           }
         }
         if (changed) {
-          hsPositionsRef.current = newPositions;
-          setHsPositions(newPositions);
+          hsPositionsRef.current = smoothed;
+          setHsPositions([...smoothed]);
         }
       } catch {}
       rafRef.current = requestAnimationFrame(loop);
