@@ -217,9 +217,8 @@ export default function TourViewer({ config }: Props) {
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-30 flex">
             <div className="w-64 bg-white flex flex-col shadow-2xl" style={{ overflow: "hidden" }}>
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
-                <span className="text-sm font-semibold text-gray-700">Odalar</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 text-xl">✕</button>
+              <div className="flex items-center justify-end px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
@@ -230,7 +229,7 @@ export default function TourViewer({ config }: Props) {
         )}
 
         {/* Viewer — kalan alanı tam doldurur */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#000" }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#1a1a1a" }}>
           {/* Loading */}
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
@@ -320,6 +319,7 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <style>{`
+        .pnlm-container { background: #1a1a1a !important; }
         @keyframes hs-arrow-1 {
           0%, 100% { opacity: 0.2; transform: translateY(4px); }
           50% { opacity: 0.5; transform: translateY(0px); }
