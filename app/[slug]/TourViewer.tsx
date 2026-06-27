@@ -221,6 +221,13 @@ export default function TourViewer({ config }: Props) {
               const pos = hsPositions[i];
               if (!pos || !pos.visible) return null;
               const tip = h.tip || "ilerleme";
+
+              // Pitch'e göre eğim — yere yakın (-30° altı) yatay, göz hizası dik
+              const pitchClamp = Math.max(-60, Math.min(0, h.pitch));
+              const tiltX = Math.abs(pitchClamp) * 0.7; // max ~42deg eğim
+              const baseRotation = (TIP_ROTATION[tip] || "rotate(0deg)").replace("rotate(", "").replace("deg)", "");
+              const rotZ = parseFloat(baseRotation);
+
               return (
                 <div
                   key={i}
@@ -237,7 +244,6 @@ export default function TourViewer({ config }: Props) {
                     if (hedef) goRoom(hedef);
                   }}
                 >
-                  {/* Tooltip */}
                   {tooltip === h.baslik && (
                     <div
                       className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-white text-xs font-medium px-3 py-1.5 rounded-lg pointer-events-none"
@@ -246,13 +252,12 @@ export default function TourViewer({ config }: Props) {
                       {h.baslik}
                     </div>
                   )}
-                  {/* Hotspot — çift ok dikey, uca doğru */}
                   <div
                     className="flex flex-col items-center cursor-pointer"
                     style={{
-                      transform: TIP_ROTATION[tip] || "rotate(0deg)",
+                      transform: `rotateX(${tiltX}deg) rotateZ(${rotZ}deg)`,
+                      transformStyle: "preserve-3d",
                       filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.7))",
-                      gap: 0,
                     }}
                   >
                     <svg width="40" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
