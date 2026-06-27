@@ -297,11 +297,9 @@ export default function HotspotEditor({ oda, tumOdalar, onSave, onClose }: Props
                 </select>
                 {/* İkon tipi seçimi */}
                 <p className="text-xs text-gray-500 mb-1">İkon tipi</p>
-                <div className="grid grid-cols-5 gap-1 mb-2">
+                <div className="grid grid-cols-3 gap-1 mb-2">
                   {[
-                    { val: "ilerleme", label: "→",   title: "İlerleme" },
-                    { val: "ileri",    label: "↑",   title: "İleri" },
-                    { val: "geri",     label: "↓",   title: "Geri" },
+                    { val: "ilerleme", label: "∧∧", title: "İlerleme" },
                     { val: "kapi-gir", label: "Giriş", title: "Kapı Girişi" },
                     { val: "kapi-cik", label: "Çıkış", title: "Kapı Çıkışı" },
                   ].map(({ val, label, title }) => (
