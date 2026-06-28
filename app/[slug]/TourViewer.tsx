@@ -136,7 +136,8 @@ export default function TourViewer({ config }: Props) {
     document.head.appendChild(link);
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js";
-    script.onload = () => setPannellumLoaded(true);
+    script.onload = () => { console.log("Pannellum loaded"); setPannellumLoaded(true); };
+    script.onerror = () => console.error("Pannellum failed to load");
     document.head.appendChild(script);
   }, []);
 
@@ -251,6 +252,7 @@ export default function TourViewer({ config }: Props) {
     // Pannellum'u başlat
     function createViewer(url: string) {
       if (destroyed || !viewerRef.current) return;
+      console.log("createViewer:", url, "destroyed:", destroyed);
       try {
         if (pannellumRef.current) {
           try { pannellumRef.current.destroy(); } catch {}
