@@ -195,9 +195,11 @@ export default function TourViewer({ config }: Props) {
     const win = window as any;
     if (!win.pannellum) return;
 
-    // Önceki viewer'ı temizle
     cancelAnimationFrame(rafRef.current);
     if (pannellumRef.current) {
+      if ((pannellumRef.current as any)._cleanup) {
+        try { (pannellumRef.current as any)._cleanup(); } catch {}
+      }
       try { pannellumRef.current.destroy(); } catch {}
       pannellumRef.current = null;
     }
@@ -211,27 +213,22 @@ export default function TourViewer({ config }: Props) {
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    // Hangi URL'ler denenecek sırası
-    const urlQueue = [thumbUrl, mediumUrl, fullUrl];
-    let currentIdx = 0;
-    let isDestroyed = false;
+    let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     function cleanup() {
-      isDestroyed = true;
+      destroyed = true;
       timers.forEach(t => clearTimeout(t));
     }
 
-    function tryLoad(idx: number) {
-      if (isDestroyed || idx >= urlQueue.length) return;
-      const url = urlQueue[idx];
-
+    // Pannellum'u başlat
+    function createViewer(url: string) {
+      if (destroyed || !viewerRef.current) return;
       try {
         if (pannellumRef.current) {
           try { pannellumRef.current.destroy(); } catch {}
           pannellumRef.current = null;
         }
-
         pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
           type: "equirectangular",
           panorama: url,
@@ -246,67 +243,85 @@ export default function TourViewer({ config }: Props) {
           showControls: false,
           hotSpots: [],
         });
-
-        pannellumRef.current.on("load", () => {
-          if (isDestroyed) return;
-          setLoading(false);
-          startLoop();
-          // Kaliteyi yükselt
-          if (idx < urlQueue.length - 1) {
-            const t = setTimeout(() => tryLoad(idx + 1), idx === 0 ? 1500 : 2000);
-            timers.push(t);
-          }
-        });
-
-        pannellumRef.current.on("error", () => {
-          if (isDestroyed) return;
-          if (idx < urlQueue.length - 1) {
-            // Sonraki versiyonu dene
-            tryLoad(idx + 1);
-          } else {
-            // Tüm versiyonlar başarısız
-            setLoading(false);
-            setLoadError(true);
-          }
-        });
-
       } catch (e) {
-        // Pannellum init hatası — sonrakini dene
-        if (!isDestroyed && idx < urlQueue.length - 1) {
-          tryLoad(idx + 1);
-        } else if (!isDestroyed) {
-          setLoading(false);
-          setLoadError(true);
-        }
+        if (!destroyed) { setLoading(false); setLoadError(true); }
       }
     }
 
-    tryLoad(0);
+    // Arka planda fotoğraf yükle, hazır olunca pannellum'u yenile
+    function upgradeQuality(url: string, delay: number) {
+      const t = setTimeout(() => {
+        if (destroyed) return;
+        // Arka planda Image() ile yükle — görünmez
+        const img = new Image();
+        img.onload = () => {
+          if (destroyed || !pannellumRef.current) return;
+          // Mevcut kamera pozisyonunu kaydet
+          try {
+            const curYaw   = pannellumRef.current.getYaw();
+            const curPitch = pannellumRef.current.getPitch();
+            const curHfov  = pannellumRef.current.getHfov();
+            // Viewer'ı yeni URL ile yeniden başlat — kamera aynı kalır
+            try { pannellumRef.current.destroy(); } catch {}
+            pannellumRef.current = null;
+            pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
+              type: "equirectangular",
+              panorama: url,
+              autoLoad: true,
+              yaw: curYaw,
+              pitch: curPitch,
+              hfov: curHfov,
+              minHfov: 10,
+              maxHfov: 170,
+              showZoomCtrl: false,
+              showFullscreenCtrl: false,
+              showControls: false,
+              hotSpots: [],
+            });
+          } catch {}
+        };
+        img.src = url;
+      }, delay);
+      timers.push(t);
+    }
 
-    // Global unhandled error'ları yakala
-    const errorHandler = (e: ErrorEvent) => {
-      if (e.message?.includes("pannellum") || e.message?.includes("WebGL")) {
-        e.preventDefault();
-        if (!isDestroyed) {
-          setLoading(false);
-          // Yeniden dene
-          tryLoad(urlQueue.length - 1);
+    // 1. Thumb ile başla
+    createViewer(thumbUrl);
+
+    if (pannellumRef.current) {
+      let firstLoad = false;
+      pannellumRef.current.on("load", () => {
+        if (destroyed || firstLoad) return;
+        firstLoad = true;
+        setLoading(false);
+        startLoop();
+        // 2. Medium arka planda hazır olunca geç (1.5sn)
+        upgradeQuality(mediumUrl, 1500);
+        // 3. Full arka planda hazır olunca geç (4sn)
+        upgradeQuality(fullUrl, 4000);
+      });
+      pannellumRef.current.on("error", () => {
+        if (destroyed) return;
+        // Thumb yoksa direkt full
+        createViewer(fullUrl);
+        if (pannellumRef.current) {
+          pannellumRef.current.on("load", () => {
+            if (!firstLoad) { firstLoad = true; setLoading(false); startLoop(); }
+          });
+          pannellumRef.current.on("error", () => {
+            if (!firstLoad) { firstLoad = true; setLoading(false); setLoadError(true); }
+          });
         }
-      }
-    };
-    window.addEventListener("error", errorHandler);
+      });
+    }
 
-    // Cleanup fonksiyonunu ref'e kaydet
-    (pannellumRef.current as any)._cleanup = () => {
-      cleanup();
-      window.removeEventListener("error", errorHandler);
-    };
-
-    // 30sn max timeout
-    const t = setTimeout(() => {
-      if (!isDestroyed) { setLoading(false); }
-    }, 30000);
+    // 30sn fallback
+    const t = setTimeout(() => { if (!destroyed) setLoading(false); }, 30000);
     timers.push(t);
+
+    if (pannellumRef.current) {
+      (pannellumRef.current as any)._cleanup = cleanup;
+    }
 
   }, [pannellumLoaded]);
 
