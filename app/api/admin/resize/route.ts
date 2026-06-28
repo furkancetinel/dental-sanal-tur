@@ -3,23 +3,30 @@ import { isAuthenticated } from "@/lib/auth";
 import { getToursDir } from "@/lib/config";
 import path from "path";
 import fs from "fs";
+import Jimp from "jimp";
 
 export const maxDuration = 60;
+
+async function resizeImage(inputPath: string, outputPath: string, maxWidth: number, maxHeight: number, quality: number) {
+  const img = await Jimp.read(inputPath);
+  const w = img.width, h = img.height;
+  if (w > maxWidth || h > maxHeight) {
+    img.scaleToFit(maxWidth, maxHeight);
+  }
+  img.quality(quality);
+  await img.writeAsync(outputPath);
+}
 
 export async function POST(req: NextRequest) {
   if (!await isAuthenticated()) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
 
   try {
-    // sharp'ı runtime'da import et — build'de sorun çıkarmasın
-    const sharp = (await import("sharp")).default;
-
     const toursDir = getToursDir();
     const results: string[] = [];
     const errors: string[] = [];
 
     const firms = fs.readdirSync(toursDir, { withFileTypes: true })
-      .filter(e => e.isDirectory())
-      .map(e => e.name);
+      .filter(e => e.isDirectory()).map(e => e.name);
 
     for (const firm of firms) {
       const photosDir = path.join(toursDir, firm, "photos");
@@ -36,11 +43,11 @@ export async function POST(req: NextRequest) {
 
         try {
           if (!fs.existsSync(thumbPath)) {
-            await sharp(fullPath).resize(1024, 512, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75, progressive: true }).toFile(thumbPath);
+            await resizeImage(fullPath, thumbPath, 1024, 512, 75);
             results.push(`✓ ${firm}/${base}-thumb`);
           }
           if (!fs.existsSync(mediumPath)) {
-            await sharp(fullPath).resize(2048, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85, progressive: true }).toFile(mediumPath);
+            await resizeImage(fullPath, mediumPath, 2048, 1024, 85);
             results.push(`✓ ${firm}/${base}-medium`);
           }
         } catch (e: any) {
