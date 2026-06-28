@@ -181,18 +181,15 @@ export default function TourViewer({ config }: Props) {
     const mediumPlusUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium-plus$1");
     const fullUrl       = oda.foto;
 
-    let startUrl: string, fallbackUrl: string, upgradeUrl: string | null = null;
+    let startUrl: string, fallbackUrl: string;
     if (isLowEndDevice) {
-      // Zayıf cihaz: medium → 10sn → thumb
-      startUrl = mediumUrl; fallbackUrl = thumbUrl;
+      // Zayıf cihaz: thumb ile başla (güvenli), sonra medium dene
+      startUrl = thumbUrl; fallbackUrl = thumbUrl;
     } else if (!isMobile) {
-      // Masaüstü: full → 10sn → medium-plus
       startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
     } else if (effectiveType === "4g" && downlink >= 5) {
-      // Güçlü mobil: full → 10sn → medium-plus
       startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
     } else {
-      // Normal mobil: medium-plus → 10sn → medium
       startUrl = mediumPlusUrl; fallbackUrl = mediumUrl;
     }
 
@@ -225,6 +222,31 @@ export default function TourViewer({ config }: Props) {
         firstLoad = true;
         setLoading(false);
         startLoop();
+        // Zayıf cihazda thumb yüklendikten sonra medium dene
+        if (isLowEndDevice) {
+          const t = setTimeout(() => {
+            if (destroyed) return;
+            const img = new Image();
+            img.onload = () => {
+              if (destroyed || !pannellumRef.current) return;
+              try {
+                const curYaw = pannellumRef.current.getYaw();
+                const curPitch = pannellumRef.current.getPitch();
+                const curHfov = pannellumRef.current.getHfov();
+                try { pannellumRef.current.destroy(); } catch {}
+                pannellumRef.current = null;
+                pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
+                  type: "equirectangular", panorama: mediumUrl, autoLoad: true,
+                  yaw: curYaw, pitch: curPitch, hfov: curHfov,
+                  minHfov: 10, maxHfov: 170,
+                  showZoomCtrl: false, showFullscreenCtrl: false, showControls: false, hotSpots: [],
+                });
+              } catch {}
+            };
+            img.src = mediumUrl;
+          }, 2000);
+          timers.push(t);
+        }
       });
       pannellumRef.current.on("error", () => {
         if (destroyed || firstLoad) return;
