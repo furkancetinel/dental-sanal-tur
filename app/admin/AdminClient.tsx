@@ -157,14 +157,38 @@ export default function AdminClient({ initialKlinikler }: Props) {
       img.onload = () => {
         URL.revokeObjectURL(url);
         let w = img.width, h = img.height;
-        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => {
-          if (!blob) { resolve(file); return; }
-          resolve(new File([blob], `out.jpg`, { type: "image/jpeg" }));
-        }, "image/jpeg", quality);
+
+        // Çok büyük fotoğraflar için ara adım — direkt 4096px çizemez
+        const MAX_CANVAS = 4096;
+        if (w > MAX_CANVAS || h > MAX_CANVAS) {
+          // Önce yarı boyuta küçült
+          const step = document.createElement("canvas");
+          const sw = Math.min(w, MAX_CANVAS * 2);
+          const sh = Math.round(h * sw / w);
+          step.width = sw; step.height = sh;
+          step.getContext("2d")!.drawImage(img, 0, 0, sw, sh);
+
+          // Sonra hedef boyuta küçült
+          if (sw > maxWidth) { h = Math.round(sh * maxWidth / sw); w = maxWidth; }
+          else { w = sw; h = sh; }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d")!.drawImage(step, 0, 0, w, h);
+          canvas.toBlob((blob) => {
+            if (!blob) { resolve(file); return; }
+            resolve(new File([blob], "out.jpg", { type: "image/jpeg" }));
+          }, "image/jpeg", quality);
+        } else {
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => {
+            if (!blob) { resolve(file); return; }
+            resolve(new File([blob], "out.jpg", { type: "image/jpeg" }));
+          }, "image/jpeg", quality);
+        }
       };
       img.onerror = () => resolve(file);
       img.src = url;
