@@ -17,14 +17,9 @@ function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: num
 }
 
 const TIP_ROTATION: Record<string, string> = {
-  ilerleme:  "rotate(0deg)",
-  ileri:     "rotate(0deg)",
-  geri:      "rotate(180deg)",
-  kapi:      "rotate(0deg)",
-  "kapi-gir":"rotate(0deg)",
-  "kapi-cik":"rotate(180deg)",
-  yukari:    "rotate(0deg)",
-  asagi:     "rotate(180deg)",
+  ilerleme: "rotate(0deg)", ileri: "rotate(0deg)", geri: "rotate(180deg)",
+  kapi: "rotate(0deg)", "kapi-gir": "rotate(0deg)", "kapi-cik": "rotate(180deg)",
+  yukari: "rotate(0deg)", asagi: "rotate(180deg)",
 };
 
 const KAPI_SVG_GIR = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/><line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="30" r="2" fill="white"/><polyline points="4 30 16 23 16 37 4 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/></svg>`;
@@ -40,9 +35,7 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
         <div className="flex items-center justify-center px-4 py-5 flex-shrink-0">
           {!logoError && config.logo ? (
             <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
-          ) : (
-            <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>
-          )}
+          ) : <span className="font-semibold text-gray-800 text-sm text-center">{config.klinikAdi}</span>}
         </div>
       )}
       <div className="flex-1 overflow-y-auto min-h-0">
@@ -55,9 +48,7 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
                 style={activeOdaId === oda.id ? { background: "#f0851b", color: "#fff", fontWeight: 500 } : { color: "#4b5563" }}
                 onMouseEnter={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = "#fff7ed"; }}
                 onMouseLeave={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = ""; }}
-              >
-                <span className="truncate">{oda.baslik}</span>
-              </button>
+              ><span className="truncate">{oda.baslik}</span></button>
             ))}
           </div>
         ))}
@@ -71,7 +62,7 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
 
 export default function TourViewer({ config }: Props) {
   const viewerRef = useRef<HTMLDivElement>(null);
-  const psvRef = useRef<any>(null);
+  const pannellumRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const activeOdaRef = useRef<Oda | null>(null);
   const smoothPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
@@ -90,7 +81,7 @@ export default function TourViewer({ config }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [psvLoaded, setPsvLoaded] = useState(false);
+  const [pannellumLoaded, setPannellumLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tooltip, setTooltip] = useState<string | null>(null);
   const [hsPositions, setHsPositions] = useState<{ x: number; y: number; visible: boolean }[]>([]);
@@ -103,30 +94,26 @@ export default function TourViewer({ config }: Props) {
     return acc;
   }, {} as Record<string, Oda[]>);
 
-  // PSV yükle
   useEffect(() => {
-    const link1 = document.createElement("link");
-    link1.rel = "stylesheet";
-    link1.href = "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.min.css";
-    document.head.appendChild(link1);
-
+    if ((window as any).pannellum) { setPannellumLoaded(true); return; }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css";
+    document.head.appendChild(link);
     const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.min.js";
-    script.onload = () => setPsvLoaded(true);
-    script.onerror = () => console.error("PSV load failed");
+    script.src = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js";
+    script.onload = () => setPannellumLoaded(true);
     document.head.appendChild(script);
   }, []);
 
   function startLoop() {
     cancelAnimationFrame(rafRef.current);
     function loop() {
-      if (!psvRef.current || !viewerRef.current) { rafRef.current = requestAnimationFrame(loop); return; }
+      if (!pannellumRef.current || !viewerRef.current) { rafRef.current = requestAnimationFrame(loop); return; }
       try {
-        const pos = psvRef.current.getPosition();
-        const camYaw   = (pos.yaw * 180 / Math.PI);
-        const camPitch = (pos.pitch * 180 / Math.PI);
-        const fov = psvRef.current.getZoomLevel();
-        const hfov = 110 - fov * 0.7;
+        const camYaw = pannellumRef.current.getYaw();
+        const camPitch = pannellumRef.current.getPitch();
+        const hfov = pannellumRef.current.getHfov();
         const rect = viewerRef.current.getBoundingClientRect();
         const aspect = rect.width / rect.height;
         const oda = activeOdaRef.current!;
@@ -153,12 +140,16 @@ export default function TourViewer({ config }: Props) {
   }
 
   const initViewer = useCallback((oda: Oda) => {
-    if (!psvLoaded || !viewerRef.current) return;
-    const PSV = (window as any).PhotoSphereViewer?.Viewer;
-    if (!PSV) return;
+    if (!pannellumLoaded || !viewerRef.current) return;
+    const win = window as any;
+    if (!win.pannellum) return;
 
     cancelAnimationFrame(rafRef.current);
-    if (psvRef.current) { try { psvRef.current.destroy(); } catch {} psvRef.current = null; }
+    if (pannellumRef.current) {
+      if ((pannellumRef.current as any)._cleanup) { try { (pannellumRef.current as any)._cleanup(); } catch {} }
+      try { pannellumRef.current.destroy(); } catch {}
+      pannellumRef.current = null;
+    }
 
     setLoading(true);
     setLoadError(false);
@@ -175,61 +166,60 @@ export default function TourViewer({ config }: Props) {
     const fullUrl   = oda.foto;
 
     let startUrl: string, fallbackUrl: string;
-    if (!isMobile) {
-      startUrl = fullUrl; fallbackUrl = mediumUrl;
-    } else if (effectiveType === "4g" && downlink >= 5) {
-      startUrl = fullUrl; fallbackUrl = mediumUrl;
-    } else {
-      startUrl = mediumUrl; fallbackUrl = thumbUrl;
-    }
+    if (!isMobile) { startUrl = fullUrl; fallbackUrl = mediumUrl; }
+    else if (effectiveType === "4g" && downlink >= 5) { startUrl = fullUrl; fallbackUrl = mediumUrl; }
+    else { startUrl = mediumUrl; fallbackUrl = thumbUrl; }
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    function loadPSV(url: string) {
+    function cleanup() { destroyed = true; timers.forEach(clearTimeout); }
+
+    function createViewer(url: string) {
       if (destroyed || !viewerRef.current) return;
       try {
-        if (psvRef.current) { try { psvRef.current.destroy(); } catch {} psvRef.current = null; }
-        psvRef.current = new PSV({
-          container: viewerRef.current,
-          panorama: url,
-          defaultYaw: (oda.baslangicYaw ?? 0) * Math.PI / 180,
-          defaultPitch: (oda.baslangicPitch ?? 0) * Math.PI / 180,
-          defaultZoomLvl: 50,
-          navbar: false,
-          loadingImg: null,
-          touchmoveTwoFingers: false,
-          mousewheelCtrlKey: false,
-        });
-        psvRef.current.addEventListener("ready", () => {
-          if (destroyed) return;
-          setLoading(false);
-          startLoop();
-        });
-        psvRef.current.addEventListener("error", () => {
-          if (destroyed) return;
-          if (url !== fallbackUrl) loadPSV(fallbackUrl);
-          else { setLoading(false); setLoadError(true); }
+        if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+        pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
+          type: "equirectangular", panorama: url, autoLoad: true,
+          yaw: oda.baslangicYaw ?? 0, pitch: oda.baslangicPitch ?? 0,
+          hfov: oda.baslangicHfov ?? 100, minHfov: 10, maxHfov: 170,
+          showZoomCtrl: false, showFullscreenCtrl: false, showControls: false, hotSpots: [],
         });
       } catch (e) {
         if (!destroyed) { setLoading(false); setLoadError(true); }
       }
     }
 
-    loadPSV(startUrl);
+    createViewer(startUrl);
 
-    // 10sn timeout
-    const t = setTimeout(() => {
-      if (!destroyed && loading) loadPSV(fallbackUrl);
-    }, 10000);
-    timers.push(t);
-
-    return () => { destroyed = true; timers.forEach(clearTimeout); };
-  }, [psvLoaded]);
+    if (pannellumRef.current) {
+      let firstLoad = false;
+      pannellumRef.current.on("load", () => {
+        if (destroyed || firstLoad) return;
+        firstLoad = true;
+        setLoading(false);
+        startLoop();
+      });
+      pannellumRef.current.on("error", () => {
+        if (destroyed || firstLoad) return;
+        firstLoad = true;
+        createViewer(fallbackUrl);
+        if (pannellumRef.current) {
+          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
+          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
+        }
+      });
+      const t = setTimeout(() => {
+        if (!destroyed && !firstLoad) { firstLoad = true; createViewer(fallbackUrl); }
+      }, 10000);
+      timers.push(t);
+      (pannellumRef.current as any)._cleanup = cleanup;
+    }
+  }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
-    if (psvRef.current && (psvRef.current as any)._cleanup) {
-      try { (psvRef.current as any)._cleanup(); } catch {}
+    if (pannellumRef.current && (pannellumRef.current as any)._cleanup) {
+      try { (pannellumRef.current as any)._cleanup(); } catch {}
     }
     cancelAnimationFrame(rafRef.current);
     setActiveOda(oda);
@@ -243,39 +233,32 @@ export default function TourViewer({ config }: Props) {
   }, [initViewer, config.odalar]);
 
   useEffect(() => {
-    if (psvLoaded) initViewer(activeOda);
+    if (pannellumLoaded) initViewer(activeOda);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [psvLoaded]);
+  }, [pannellumLoaded]);
 
   return (
     <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#111" }}>
-      {/* Topbar mobil */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
         <button className="w-8 h-8 flex flex-col items-center justify-center gap-1.5" onClick={() => setSidebarOpen(v => !v)}>
-          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
-          <span className="block w-5 h-0.5 bg-gray-600 rounded" />
+          <span className="block w-5 h-0.5 bg-gray-600 rounded" /><span className="block w-5 h-0.5 bg-gray-600 rounded" /><span className="block w-5 h-0.5 bg-gray-600 rounded" />
         </button>
         <div className="absolute left-1/2 -translate-x-1/2">
-          {!logoError && config.logo ? (
-            <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
-          ) : <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>}
+          {!logoError && config.logo ? <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
+            : <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>}
         </div>
         <div className="w-8" />
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
-        {/* Desktop Sidebar */}
         <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, overflow: "hidden", zIndex: 10 }}>
-          <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={true} />
+          <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
         </div>
-
-        {/* Mobile Sidebar */}
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-30 flex">
             <div className="w-64 bg-white flex flex-col shadow-2xl" style={{ overflow: "hidden" }}>
               <div className="flex items-center justify-end px-4 pt-4 pb-2 flex-shrink-0">
-                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 text-xl">✕</button>
               </div>
               <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={false} />
             </div>
@@ -283,7 +266,6 @@ export default function TourViewer({ config }: Props) {
           </div>
         )}
 
-        {/* Viewer */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#111" }}>
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
@@ -295,21 +277,17 @@ export default function TourViewer({ config }: Props) {
               </div>
             </div>
           )}
-
           {loadError && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 text-white px-8 text-center">
               <p className="text-4xl mb-4">⚠️</p>
               <p className="font-semibold text-lg mb-2">Fotoğraf yüklenemedi</p>
               <p className="text-white/60 text-sm mb-6">İnternet bağlantınızı kontrol edin</p>
-              <button onClick={() => { setLoadError(false); initViewer(activeOda); }} className="px-6 py-2.5 rounded-xl text-white font-medium text-sm" style={{ background: "#f0851b" }}>
-                Tekrar Dene
-              </button>
+              <button onClick={() => { setLoadError(false); initViewer(activeOda); }} className="px-6 py-2.5 rounded-xl text-white font-medium text-sm" style={{ background: "#f0851b" }}>Tekrar Dene</button>
             </div>
           )}
 
           <div ref={viewerRef} className="w-full h-full" />
 
-          {/* Hotspot overlay */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {!loading && activeOda.hotspotlar.map((h, i) => {
               const pos = hsPositions[i];
@@ -322,8 +300,7 @@ export default function TourViewer({ config }: Props) {
                 <div key={i} className="absolute pointer-events-auto"
                   style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%`, transform: "translate(-50%, -50%)" }}
                   onMouseEnter={() => setTooltip(h.baslik)} onMouseLeave={() => setTooltip(null)}
-                  onClick={() => { const hedef = config.odalar.find(o => o.id === h.hedef); if (hedef) goRoomCb(hedef); }}
-                >
+                  onClick={() => { const hedef = config.odalar.find(o => o.id === h.hedef); if (hedef) goRoomCb(hedef); }}>
                   {tooltip === h.baslik && (
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-white text-xs font-medium px-3 py-1.5 rounded-lg pointer-events-none" style={{ background: "rgba(0,0,0,0.75)" }}>
                       {h.baslik}
@@ -348,15 +325,12 @@ export default function TourViewer({ config }: Props) {
             })}
           </div>
 
-          {/* Oda badge */}
           {!loading && (
             <div className="absolute bottom-14 right-4 sm:bottom-5 sm:right-5 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white pointer-events-none z-10">
               <p className="text-sm font-semibold leading-tight">{activeOda.baslik}</p>
               {activeOda.aciklama && <p className="text-xs text-white/60 mt-0.5">{activeOda.aciklama}</p>}
             </div>
           )}
-
-          {/* Drag hint */}
           {!loading && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:bottom-5 bg-black/50 text-white/75 text-xs px-4 py-1.5 rounded-full pointer-events-none z-10">
               Sürükleyerek gezdirin
@@ -369,7 +343,9 @@ export default function TourViewer({ config }: Props) {
         @keyframes progress-bar { 0% { width: 0%; } 90% { width: 95%; } }
         @keyframes hs-arrow-1 { 0%, 100% { opacity: 0.2; transform: translateY(4px); } 50% { opacity: 0.5; transform: translateY(0px); } }
         @keyframes hs-arrow-2 { 0%, 100% { opacity: 0.7; transform: translateY(4px); } 50% { opacity: 1; transform: translateY(0px); } }
-        .psv-container { background: #111 !important; }
+        .pnlm-container { background: #111 !important; }
+        .pnlm-load-box { display: none !important; }
+        .pnlm-ui .pnlm-controls-container { display: none !important; }
       `}</style>
     </div>
   );
