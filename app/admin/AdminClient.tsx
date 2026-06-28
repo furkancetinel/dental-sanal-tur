@@ -267,7 +267,21 @@ export default function AdminClient({ initialKlinikler }: Props) {
             {msg.text}
           </span>
         )}
-        <a href="/" target="_blank" className="text-xs text-gray-400 hover:text-gray-600">Siteyi Görüntüle →</a>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              flash("Boyutlandırılıyor...", "success");
+              const res = await fetch("/api/admin/resize", { method: "POST" });
+              const data = await res.json();
+              if (data.ok) flash(`${data.results.length} versiyon oluşturuldu ✓`);
+              else flash(`Hata: ${data.error}`, "error");
+            }}
+            className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+          >
+            🖼 Eski Fotoğrafları Boyutlandır
+          </button>
+          <a href="/" target="_blank" className="text-xs text-gray-400 hover:text-gray-600">Siteyi Görüntüle →</a>
+        </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 53px)" }}>
