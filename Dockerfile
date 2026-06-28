@@ -13,6 +13,7 @@ COPY . .
 RUN npm run build
 
 FROM base AS runner
+RUN apk add --no-cache imagemagick
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
