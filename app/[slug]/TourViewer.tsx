@@ -309,7 +309,6 @@ export default function TourViewer({ config }: Props) {
     timers.push(t);
 
   }, [pannellumLoaded]);
-  }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
     // Önceki viewer cleanup
