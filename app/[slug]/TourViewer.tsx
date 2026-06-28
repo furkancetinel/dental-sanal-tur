@@ -161,14 +161,26 @@ export default function TourViewer({ config }: Props) {
     const effectiveType = connection?.effectiveType || "4g";
     const downlink = connection?.downlink || 10;
 
+    // iPhone modeli tespit et — 13 ve altı medium kullan
+    const iPhoneMatch = navigator.userAgent.match(/iPhone OS (\d+)_/);
+    const iOSVersion = iPhoneMatch ? parseInt(iPhoneMatch[1]) : 99;
+    const isOlderIPhone = isMobile && /iPhone/.test(navigator.userAgent) && iOSVersion <= 15; // iOS 15 = iPhone 13 dönemi
+
     const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
     let startUrl: string, fallbackUrl: string;
-    if (!isMobile) { startUrl = fullUrl; fallbackUrl = mediumUrl; }
-    else if (effectiveType === "4g" && downlink >= 5) { startUrl = fullUrl; fallbackUrl = mediumUrl; }
-    else { startUrl = mediumUrl; fallbackUrl = thumbUrl; }
+    if (isOlderIPhone) {
+      // iPhone 13 ve altı — medium ile başla, gerekirse thumb
+      startUrl = mediumUrl; fallbackUrl = thumbUrl;
+    } else if (!isMobile) {
+      startUrl = fullUrl; fallbackUrl = mediumUrl;
+    } else if (effectiveType === "4g" && downlink >= 5) {
+      startUrl = fullUrl; fallbackUrl = mediumUrl;
+    } else {
+      startUrl = mediumUrl; fallbackUrl = thumbUrl;
+    }
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
