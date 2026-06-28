@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dosya boş" }, { status: 400 });
 
   try {
-    const suffix = quality === "full" ? "" : `-${quality}`;
+    const suffix = quality === "full" ? "" : quality === "medium-plus" ? "-medium-plus" : `-${quality}`;
     const fileName = `${odaId}${suffix}.jpg`;
     const photosDir = path.join(getToursDir(), klinikId, "photos");
     if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });

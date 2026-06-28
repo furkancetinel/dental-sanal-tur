@@ -219,6 +219,9 @@ export default function AdminClient({ initialKlinikler }: Props) {
       const medium = await compressImage(file, 2560, 0.88);
       await uploadVersion(medium, aktifFirma.id, odaId, "medium");
 
+      const mediumPlus = await compressImage(file, 4096, 0.92);
+      await uploadVersion(mediumPlus, aktifFirma.id, odaId, "medium-plus");
+
       // Full = orijinal dosyayı direkt yükle, canvas'a sokma
       await uploadVersion(file, aktifFirma.id, odaId, "full");
 

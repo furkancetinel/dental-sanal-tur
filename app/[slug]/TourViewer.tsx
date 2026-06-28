@@ -176,18 +176,23 @@ export default function TourViewer({ config }: Props) {
 
     const isLowEndDevice = isOlderIPhone || isWeakAndroid;
 
-    const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
-    const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
-    const fullUrl   = oda.foto;
+    const thumbUrl      = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
+    const mediumUrl     = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
+    const mediumPlusUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium-plus$1");
+    const fullUrl       = oda.foto;
 
     let startUrl: string, fallbackUrl: string;
     if (isLowEndDevice) {
+      // Eski/zayıf cihaz — medium, gerekirse thumb
       startUrl = mediumUrl; fallbackUrl = thumbUrl;
     } else if (!isMobile) {
-      startUrl = fullUrl; fallbackUrl = mediumUrl;
+      // Masaüstü — full, gerekirse medium-plus
+      startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
     } else if (effectiveType === "4g" && downlink >= 5) {
-      startUrl = fullUrl; fallbackUrl = mediumUrl;
+      // Güçlü mobil hızlı bağlantı — medium-plus, gerekirse medium
+      startUrl = mediumPlusUrl; fallbackUrl = mediumUrl;
     } else {
+      // Normal mobil — medium, gerekirse thumb
       startUrl = mediumUrl; fallbackUrl = thumbUrl;
     }
 

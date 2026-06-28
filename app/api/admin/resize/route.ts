@@ -28,25 +28,22 @@ export async function POST(req: NextRequest) {
       for (const file of files) {
         const fullPath = path.join(photosDir, file);
         const base = file.replace(/\.[^.]+$/, "");
-        const thumbPath  = path.join(photosDir, `${base}-thumb.jpg`);
-        const mediumPath = path.join(photosDir, `${base}-medium.jpg`);
+        const thumbPath      = path.join(photosDir, `${base}-thumb.jpg`);
+        const mediumPath     = path.join(photosDir, `${base}-medium.jpg`);
+        const mediumPlusPath = path.join(photosDir, `${base}-medium-plus.jpg`);
 
         try {
           if (!fs.existsSync(thumbPath)) {
-            try {
-              execSync(`magick "${fullPath}" -resize 1024x512\\> -quality 80 "${thumbPath}"`, { timeout: 30000 });
-              results.push(`✓ ${firm}/${base}-thumb`);
-            } catch (e: any) {
-              errors.push(`✗ ${firm}/${base}-thumb: ${e.stderr?.toString() || e.message}`);
-            }
+            try { execSync(`magick "${fullPath}" -resize 1024x512\\> -quality 80 "${thumbPath}"`, { timeout: 30000 }); results.push(`✓ ${firm}/${base}-thumb`); }
+            catch (e: any) { errors.push(`✗ ${firm}/${base}-thumb: ${e.stderr?.toString() || e.message}`); }
           }
           if (!fs.existsSync(mediumPath)) {
-            try {
-              execSync(`magick "${fullPath}" -resize 4096x2048\\> -quality 90 "${mediumPath}"`, { timeout: 60000 });
-              results.push(`✓ ${firm}/${base}-medium`);
-            } catch (e: any) {
-              errors.push(`✗ ${firm}/${base}-medium: ${e.stderr?.toString() || e.message}`);
-            }
+            try { execSync(`magick "${fullPath}" -resize 2560x1280\\> -quality 88 "${mediumPath}"`, { timeout: 60000 }); results.push(`✓ ${firm}/${base}-medium`); }
+            catch (e: any) { errors.push(`✗ ${firm}/${base}-medium: ${e.stderr?.toString() || e.message}`); }
+          }
+          if (!fs.existsSync(mediumPlusPath)) {
+            try { execSync(`magick "${fullPath}" -resize 4096x2048\\> -quality 92 "${mediumPlusPath}"`, { timeout: 60000 }); results.push(`✓ ${firm}/${base}-medium-plus`); }
+            catch (e: any) { errors.push(`✗ ${firm}/${base}-medium-plus: ${e.stderr?.toString() || e.message}`); }
           }
         } catch (e: any) {
           errors.push(`✗ ${firm}/${file}: ${e.message}`);
