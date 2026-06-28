@@ -81,7 +81,6 @@ export default function TourViewer({ config }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [webGLInfo, setWebGLInfo] = useState("");
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tooltip, setTooltip] = useState<string | null>(null);
@@ -155,54 +154,34 @@ export default function TourViewer({ config }: Props) {
     const testCanvas = document.createElement("canvas");
     const gl = testCanvas.getContext("webgl") || testCanvas.getContext("experimental-webgl");
     if (!gl) { setLoading(false); setLoadError(true); return; }
-    const maxTexture = (gl as WebGLRenderingContext).getParameter((gl as WebGLRenderingContext).MAX_TEXTURE_SIZE);
-    setWebGLInfo(`Max: ${maxTexture}px`);
+
     setHsPositions([]);
     smoothPositionsRef.current = [];
-
-    const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
-    const connection = (navigator as any).connection;
-    const effectiveType = connection?.effectiveType || "4g";
-    const downlink = connection?.downlink || 10;
-
-    // Eski/zayıf cihaz tespiti — medium kullan
-    const iPhoneMatch = navigator.userAgent.match(/iPhone OS (\d+)_/);
-    const iOSVersion = iPhoneMatch ? parseInt(iPhoneMatch[1]) : 99;
-    const isOlderIPhone = /iPhone/.test(navigator.userAgent) && iOSVersion <= 15;
-
-    // Eski Android — düşük RAM veya eski GPU
-    const androidMatch = navigator.userAgent.match(/Android (\d+)/);
-    const androidVersion = androidMatch ? parseInt(androidMatch[1]) : 99;
-    const isWeakAndroid = /Android/.test(navigator.userAgent) && (
-      androidVersion <= 10 ||
-      /Redmi|Galaxy A[0-9]|Galaxy M|Galaxy J|Moto G|Nokia|Realme|OPPO A|Vivo Y/i.test(navigator.userAgent)
-    );
-
-    const isLowEndDevice = isOlderIPhone || isWeakAndroid;
 
     const thumbUrl      = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl     = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const mediumPlusUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium-plus$1");
     const fullUrl       = oda.foto;
 
-    let startUrl: string, fallbackUrl: string;
-    if (isLowEndDevice) {
-      startUrl = mediumUrl; fallbackUrl = thumbUrl;
-    } else if (!isMobile) {
-      startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
-    } else if (effectiveType === "4g" && downlink >= 5) {
-      startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
-    } else {
-      startUrl = mediumPlusUrl; fallbackUrl = mediumUrl;
-    }
+    const isMobile = /iPhone|Android.*Mobile|iPod|iPad/i.test(navigator.userAgent);
 
+    // Mobil: mediumPlus → medium → thumb
+    // Masaüstü: full → mediumPlus → medium
+    const queue = isMobile
+      ? [mediumPlusUrl, mediumUrl, thumbUrl]
+      : [fullUrl, mediumPlusUrl, mediumUrl];
+
+    let queueIdx = 0;
     let destroyed = false;
+    let loaded = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     function cleanup() { destroyed = true; timers.forEach(clearTimeout); }
 
-    function createViewer(url: string) {
-      if (destroyed || !viewerRef.current) return;
+    function tryNext() {
+      if (destroyed || loaded) return;
+      if (queueIdx >= queue.length) { setLoading(false); setLoadError(true); return; }
+      const url = queue[queueIdx++];
       try {
         if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
         pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
@@ -211,36 +190,28 @@ export default function TourViewer({ config }: Props) {
           hfov: oda.baslangicHfov ?? 100, minHfov: 10, maxHfov: 170,
           showZoomCtrl: false, showFullscreenCtrl: false, showControls: false, hotSpots: [],
         });
-      } catch (e) {
-        if (!destroyed) { setLoading(false); setLoadError(true); }
+        pannellumRef.current.on("load", () => {
+          if (destroyed || loaded) return;
+          loaded = true;
+          setLoading(false);
+          startLoop();
+        });
+        pannellumRef.current.on("error", () => {
+          if (destroyed || loaded) return;
+          tryNext();
+        });
+        // 10sn timeout — bir alta geç
+        const t = setTimeout(() => {
+          if (!destroyed && !loaded) tryNext();
+        }, 10000);
+        timers.push(t);
+      } catch {
+        tryNext();
       }
     }
 
-    createViewer(startUrl);
-
-    if (pannellumRef.current) {
-      let firstLoad = false;
-      pannellumRef.current.on("load", () => {
-        if (destroyed || firstLoad) return;
-        firstLoad = true;
-        setLoading(false);
-        startLoop();
-      });
-      pannellumRef.current.on("error", () => {
-        if (destroyed || firstLoad) return;
-        firstLoad = true;
-        createViewer(fallbackUrl);
-        if (pannellumRef.current) {
-          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
-          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
-        }
-      });
-      const t = setTimeout(() => {
-        if (!destroyed && !firstLoad) { firstLoad = true; createViewer(fallbackUrl); }
-      }, 10000);
-      timers.push(t);
-      (pannellumRef.current as any)._cleanup = cleanup;
-    }
+    tryNext();
+    if (pannellumRef.current) (pannellumRef.current as any)._cleanup = cleanup;
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
@@ -298,7 +269,6 @@ export default function TourViewer({ config }: Props) {
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
-              {webGLInfo && <p className="text-white/40 text-xs mt-2">{webGLInfo}</p>}
               <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 10s ease-in-out forwards" }} />
               </div>
