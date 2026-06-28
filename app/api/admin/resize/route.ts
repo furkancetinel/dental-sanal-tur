@@ -33,12 +33,20 @@ export async function POST(req: NextRequest) {
 
         try {
           if (!fs.existsSync(thumbPath)) {
-            execSync(`convert "${fullPath}" -resize 1024x512> -quality 80 "${thumbPath}"`, { timeout: 30000 });
-            results.push(`✓ ${firm}/${base}-thumb`);
+            try {
+              execSync(`convert "${fullPath}" -resize 1024x512\\> -quality 80 "${thumbPath}"`, { timeout: 30000 });
+              results.push(`✓ ${firm}/${base}-thumb`);
+            } catch (e: any) {
+              errors.push(`✗ ${firm}/${base}-thumb: ${e.stderr?.toString() || e.message}`);
+            }
           }
           if (!fs.existsSync(mediumPath)) {
-            execSync(`convert "${fullPath}" -resize 4096x2048> -quality 90 "${mediumPath}"`, { timeout: 60000 });
-            results.push(`✓ ${firm}/${base}-medium`);
+            try {
+              execSync(`convert "${fullPath}" -resize 4096x2048\\> -quality 90 "${mediumPath}"`, { timeout: 60000 });
+              results.push(`✓ ${firm}/${base}-medium`);
+            } catch (e: any) {
+              errors.push(`✗ ${firm}/${base}-medium: ${e.stderr?.toString() || e.message}`);
+            }
           }
         } catch (e: any) {
           errors.push(`✗ ${firm}/${file}: ${e.message}`);
