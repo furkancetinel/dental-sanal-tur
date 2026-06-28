@@ -213,16 +213,14 @@ export default function TourViewer({ config }: Props) {
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    // Cihaz tipine göre başlangıç ve max kalite
+    // Cihaz tipine göre kalite stratejisi
     const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
-    const isTablet = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent);
 
-    // Mobil: thumb → medium (max)
-    // Tablet/PC: medium → full
-    const startUrl = isMobile ? thumbUrl : mediumUrl;
-    const upgradeUrls = isMobile
-      ? [{ url: mediumUrl, delay: 1500 }]
-      : [{ url: fullUrl, delay: 3000 }];
+    // Mobil: medium → (10sn içinde yüklenmezse thumb)
+    // Masaüstü: full → (10sn içinde yüklenmezse medium)
+    const startUrl    = isMobile ? mediumUrl : fullUrl;
+    const fallbackUrl = isMobile ? thumbUrl  : mediumUrl;
+    const upgradeUrl  = isMobile ? null      : null; // başlangıç zaten max
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -301,26 +299,36 @@ export default function TourViewer({ config }: Props) {
 
     if (pannellumRef.current) {
       let firstLoad = false;
+
       pannellumRef.current.on("load", () => {
         if (destroyed || firstLoad) return;
         firstLoad = true;
         setLoading(false);
         startLoop();
-        upgradeUrls.forEach(({ url, delay }) => upgradeQuality(url, delay));
       });
+
       pannellumRef.current.on("error", () => {
-        if (destroyed) return;
-        // Başlangıç yüklenmediyse full dene
-        createViewer(fullUrl);
+        if (destroyed || firstLoad) return;
+        firstLoad = true;
+        // Hemen alt kaliteye geç
+        createViewer(fallbackUrl);
         if (pannellumRef.current) {
-          pannellumRef.current.on("load", () => {
-            if (!firstLoad) { firstLoad = true; setLoading(false); startLoop(); }
-          });
-          pannellumRef.current.on("error", () => {
-            if (!firstLoad) { firstLoad = true; setLoading(false); setLoadError(true); }
-          });
+          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
+          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
         }
       });
+
+      // 10sn içinde yüklenmezse alt kaliteye geç
+      const fallbackTimer = setTimeout(() => {
+        if (destroyed || firstLoad) return;
+        firstLoad = true;
+        createViewer(fallbackUrl);
+        if (pannellumRef.current) {
+          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
+          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
+        }
+      }, 10000);
+      timers.push(fallbackTimer);
     }
 
     // 30sn fallback
