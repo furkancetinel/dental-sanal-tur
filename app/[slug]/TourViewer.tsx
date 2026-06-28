@@ -213,17 +213,16 @@ export default function TourViewer({ config }: Props) {
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    // Cihaz tipine göre kalite stratejisi
+    // Cihaz tipine göre başlangıç ve max kalite
     const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
     const isTablet = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent);
 
     // Mobil: thumb → medium (max)
-    // Tablet/PC: thumb → medium → full
+    // Tablet/PC: medium → full
+    const startUrl = isMobile ? thumbUrl : mediumUrl;
     const upgradeUrls = isMobile
       ? [{ url: mediumUrl, delay: 1500 }]
-      : isTablet
-        ? [{ url: mediumUrl, delay: 1500 }, { url: fullUrl, delay: 5000 }]
-        : [{ url: mediumUrl, delay: 1500 }, { url: fullUrl, delay: 4000 }];
+      : [{ url: fullUrl, delay: 3000 }];
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -297,8 +296,8 @@ export default function TourViewer({ config }: Props) {
       timers.push(t);
     }
 
-    // 1. Thumb ile başla
-    createViewer(thumbUrl);
+    // Başlangıç kalitesiyle başlat
+    createViewer(startUrl);
 
     if (pannellumRef.current) {
       let firstLoad = false;
@@ -307,12 +306,11 @@ export default function TourViewer({ config }: Props) {
         firstLoad = true;
         setLoading(false);
         startLoop();
-        // Cihaza göre kalite yükselt
         upgradeUrls.forEach(({ url, delay }) => upgradeQuality(url, delay));
       });
       pannellumRef.current.on("error", () => {
         if (destroyed) return;
-        // Thumb yoksa direkt full
+        // Başlangıç yüklenmediyse full dene
         createViewer(fullUrl);
         if (pannellumRef.current) {
           pannellumRef.current.on("load", () => {
