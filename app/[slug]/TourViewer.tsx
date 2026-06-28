@@ -213,14 +213,32 @@ export default function TourViewer({ config }: Props) {
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    // Cihaz tipine göre kalite stratejisi
+    // Cihaz + network tipine göre kalite stratejisi
     const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    const effectiveType = connection?.effectiveType || "4g";
+    const downlink = connection?.downlink || 10; // Mbps, bilinmiyorsa iyi say
 
-    // Mobil: medium → (10sn içinde yüklenmezse thumb)
-    // Masaüstü: full → (10sn içinde yüklenmezse medium)
-    const startUrl    = isMobile ? mediumUrl : fullUrl;
-    const fallbackUrl = isMobile ? thumbUrl  : mediumUrl;
-    const upgradeUrl  = isMobile ? null      : null; // başlangıç zaten max
+    let startUrl: string;
+    let fallbackUrl: string;
+
+    if (!isMobile) {
+      // Masaüstü her zaman full
+      startUrl = fullUrl;
+      fallbackUrl = mediumUrl;
+    } else if (effectiveType === "4g" && downlink >= 5) {
+      // Mobil hızlı bağlantı → full
+      startUrl = fullUrl;
+      fallbackUrl = mediumUrl;
+    } else if (effectiveType === "4g" || effectiveType === "3g") {
+      // Mobil normal → medium
+      startUrl = mediumUrl;
+      fallbackUrl = thumbUrl;
+    } else {
+      // Yavaş bağlantı → thumb
+      startUrl = thumbUrl;
+      fallbackUrl = thumbUrl;
+    }
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
