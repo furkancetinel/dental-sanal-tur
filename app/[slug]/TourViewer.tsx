@@ -112,7 +112,6 @@ export default function TourViewer({ config }: Props) {
   const [activeOda, setActiveOda] = useState<Oda>(baslangicOda);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [debugMsg, setDebugMsg] = useState("");
   const [logoError, setLogoError] = useState(false);
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -253,7 +252,6 @@ export default function TourViewer({ config }: Props) {
     // Pannellum'u başlat
     function createViewer(url: string) {
       if (destroyed || !viewerRef.current) return;
-      setDebugMsg(`Yükleniyor: ${url.split("/").pop()}`);
       try {
         if (pannellumRef.current) {
           try { pannellumRef.current.destroy(); } catch {}
@@ -324,19 +322,17 @@ export default function TourViewer({ config }: Props) {
       pannellumRef.current.on("load", () => {
         if (destroyed || firstLoad) return;
         firstLoad = true;
-        setDebugMsg("Yüklendi ✓");
         setLoading(false);
         startLoop();
       });
 
       pannellumRef.current.on("error", () => {
-        setDebugMsg("Hata — fallback deneniyor...");
         if (destroyed || firstLoad) return;
         firstLoad = true;
         createViewer(fallbackUrl);
         if (pannellumRef.current) {
-          pannellumRef.current.on("load", () => { setDebugMsg("Fallback yüklendi ✓"); setLoading(false); startLoop(); });
-          pannellumRef.current.on("error", () => { setDebugMsg("Tüm versiyonlar başarısız"); setLoading(false); setLoadError(true); });
+          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
+          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
         }
       });
 
@@ -449,7 +445,6 @@ export default function TourViewer({ config }: Props) {
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
-              {debugMsg && <p className="text-white/50 text-xs mt-2 px-4 text-center">{debugMsg}</p>}
               <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 12s ease-in-out forwards" }} />
               </div>

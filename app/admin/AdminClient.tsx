@@ -216,7 +216,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
       const thumb  = await compressImage(file, 1024, 0.75);
       await uploadVersion(thumb, aktifFirma.id, odaId, "thumb");
 
-      const medium = await compressImage(file, 4096, 0.92);
+      const medium = await compressImage(file, 2560, 0.88);
       await uploadVersion(medium, aktifFirma.id, odaId, "medium");
 
       // Full = orijinal dosyayı direkt yükle, canvas'a sokma
