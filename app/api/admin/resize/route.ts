@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             catch (e: any) { errors.push(`✗ ${firm}/${base}-thumb: ${e.stderr?.toString() || e.message}`); }
           }
           if (!fs.existsSync(mediumPath)) {
-            try { execSync(`magick "${fullPath}" -resize 2560x1280\\> -quality 88 "${mediumPath}"`, { timeout: 60000 }); results.push(`✓ ${firm}/${base}-medium`); }
+            try { execSync(`magick "${fullPath}" -resize 2000x1000\\> -quality 85 "${mediumPath}"`, { timeout: 60000 }); results.push(`✓ ${firm}/${base}-medium`); }
             catch (e: any) { errors.push(`✗ ${firm}/${base}-medium: ${e.stderr?.toString() || e.message}`); }
           }
           if (!fs.existsSync(mediumPlusPath)) {
