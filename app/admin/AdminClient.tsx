@@ -270,11 +270,28 @@ export default function AdminClient({ initialKlinikler }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={async () => {
-              flash("Boyutlandırılıyor...", "success");
+              flash("Kontrol ediliyor...", "success");
               const res = await fetch("/api/admin/resize", { method: "POST" });
               const data = await res.json();
-              if (data.ok) flash(`${data.results.length} versiyon oluşturuldu ✓`);
-              else flash(`Hata: ${data.error}`, "error");
+              if (!data.needed || data.needed.length === 0) { flash("Tüm fotoğraflar zaten hazır ✓"); return; }
+              flash(`${data.needed.length} fotoğraf boyutlandırılıyor...`, "success");
+              let done = 0;
+              for (const item of data.needed) {
+                try {
+                  // Orijinal fotoğrafı fetch et
+                  const imgRes = await fetch(item.url);
+                  const blob = await imgRes.blob();
+                  const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
+                  // Thumb ve medium oluştur
+                  const thumb  = await compressImage(file, 1024, 0.75);
+                  const medium = await compressImage(file, 2048, 0.85);
+                  await uploadVersion(thumb,  item.firm, item.oda, "thumb");
+                  await uploadVersion(medium, item.firm, item.oda, "medium");
+                  done++;
+                  flash(`${done}/${data.needed.length} tamamlandı...`, "success");
+                } catch {}
+              }
+              flash(`${done} fotoğraf boyutlandırıldı ✓`);
             }}
             className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
           >
