@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, results, errors });
+    return NextResponse.json({ ok: true, results, errors, toursDir });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

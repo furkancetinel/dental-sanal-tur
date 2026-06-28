@@ -298,7 +298,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
               const res = await fetch("/api/admin/resize", { method: "POST" });
               const data = await res.json();
               if (data.ok) {
-                flash(`${data.results.length} versiyon oluşturuldu ✓${data.errors.length > 0 ? ` (${data.errors.length} hata)` : ""}`);
+                flash(`${data.results.length} versiyon ✓ | Hata: ${data.errors.join(" | ").substring(0, 100)}`);
               } else {
                 flash(`Hata: ${data.error}`, "error");
               }
