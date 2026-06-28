@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         try {
           if (!fs.existsSync(thumbPath)) {
             try {
-              execSync(`convert "${fullPath}" -resize 1024x512\\> -quality 80 "${thumbPath}"`, { timeout: 30000 });
+              execSync(`magick "${fullPath}" -resize 1024x512\\> -quality 80 "${thumbPath}"`, { timeout: 30000 });
               results.push(`✓ ${firm}/${base}-thumb`);
             } catch (e: any) {
               errors.push(`✗ ${firm}/${base}-thumb: ${e.stderr?.toString() || e.message}`);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
           }
           if (!fs.existsSync(mediumPath)) {
             try {
-              execSync(`convert "${fullPath}" -resize 4096x2048\\> -quality 90 "${mediumPath}"`, { timeout: 60000 });
+              execSync(`magick "${fullPath}" -resize 4096x2048\\> -quality 90 "${mediumPath}"`, { timeout: 60000 });
               results.push(`✓ ${firm}/${base}-medium`);
             } catch (e: any) {
               errors.push(`✗ ${firm}/${base}-medium: ${e.stderr?.toString() || e.message}`);
