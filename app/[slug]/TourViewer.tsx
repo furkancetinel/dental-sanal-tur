@@ -194,91 +194,139 @@ export default function TourViewer({ config }: Props) {
     if (!pannellumLoaded || !viewerRef.current) return;
     const win = window as any;
     if (!win.pannellum) return;
-    if (pannellumRef.current) { try { pannellumRef.current.destroy(); } catch {} pannellumRef.current = null; }
+
+    // Önceki viewer'ı temizle
+    cancelAnimationFrame(rafRef.current);
+    if (pannellumRef.current) {
+      try { pannellumRef.current.destroy(); } catch {}
+      pannellumRef.current = null;
+    }
+
     setLoading(true);
     setLoadError(false);
     setHsPositions([]);
     smoothPositionsRef.current = [];
 
-    // Adaptive quality — thumb → medium → full
-    // Thumb yoksa direkt full'dan başla
     const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    let loaded = false;
-    let qualityTimer: ReturnType<typeof setTimeout>;
+    // Hangi URL'ler denenecek sırası
+    const urlQueue = [thumbUrl, mediumUrl, fullUrl];
+    let currentIdx = 0;
+    let isDestroyed = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    function loadViewer(url: string, onSuccess?: () => void) {
-      if (pannellumRef.current) {
-        try { pannellumRef.current.destroy(); } catch {}
-        pannellumRef.current = null;
-      }
-      pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
-        type: "equirectangular",
-        panorama: url,
-        autoLoad: true,
-        yaw: oda.baslangicYaw ?? 0,
-        pitch: oda.baslangicPitch ?? 0,
-        hfov: oda.baslangicHfov ?? 100,
-        minHfov: 10,
-        maxHfov: 170,
-        showZoomCtrl: false,
-        showFullscreenCtrl: false,
-        showControls: false,
-        hotSpots: [],
-        crossOrigin: "anonymous",
-        friction: 0.15,
-      });
-      pannellumRef.current.on("load", () => {
-        if (!loaded) { loaded = true; setLoading(false); startLoop(); }
-        onSuccess?.();
-      });
-      pannellumRef.current.on("error", () => {
-        // Thumb yoksa full'a geç
-        if (url === thumbUrl) {
-          loadViewer(fullUrl);
-        } else if (!loaded) {
-          loaded = true;
+    function cleanup() {
+      isDestroyed = true;
+      timers.forEach(t => clearTimeout(t));
+    }
+
+    function tryLoad(idx: number) {
+      if (isDestroyed || idx >= urlQueue.length) return;
+      const url = urlQueue[idx];
+
+      try {
+        if (pannellumRef.current) {
+          try { pannellumRef.current.destroy(); } catch {}
+          pannellumRef.current = null;
+        }
+
+        pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
+          type: "equirectangular",
+          panorama: url,
+          autoLoad: true,
+          yaw: oda.baslangicYaw ?? 0,
+          pitch: oda.baslangicPitch ?? 0,
+          hfov: oda.baslangicHfov ?? 100,
+          minHfov: 10,
+          maxHfov: 170,
+          showZoomCtrl: false,
+          showFullscreenCtrl: false,
+          showControls: false,
+          hotSpots: [],
+        });
+
+        pannellumRef.current.on("load", () => {
+          if (isDestroyed) return;
+          setLoading(false);
+          startLoop();
+          // Kaliteyi yükselt
+          if (idx < urlQueue.length - 1) {
+            const t = setTimeout(() => tryLoad(idx + 1), idx === 0 ? 1500 : 2000);
+            timers.push(t);
+          }
+        });
+
+        pannellumRef.current.on("error", () => {
+          if (isDestroyed) return;
+          if (idx < urlQueue.length - 1) {
+            // Sonraki versiyonu dene
+            tryLoad(idx + 1);
+          } else {
+            // Tüm versiyonlar başarısız
+            setLoading(false);
+            setLoadError(true);
+          }
+        });
+
+      } catch (e) {
+        // Pannellum init hatası — sonrakini dene
+        if (!isDestroyed && idx < urlQueue.length - 1) {
+          tryLoad(idx + 1);
+        } else if (!isDestroyed) {
           setLoading(false);
           setLoadError(true);
         }
-      });
+      }
     }
 
-    // Thumb ile başlamayı dene, başarılıysa kalite yükselt
-    loadViewer(thumbUrl, () => {
-      qualityTimer = setTimeout(() => {
-        loadViewer(mediumUrl, () => {
-          qualityTimer = setTimeout(() => {
-            loadViewer(fullUrl);
-          }, 2000);
-        });
-      }, 1500);
-    });
+    tryLoad(0);
 
-    // 25sn fallback
-    setTimeout(() => {
-      if (!loaded) { loaded = true; setLoading(false); }
-    }, 25000);
+    // Global unhandled error'ları yakala
+    const errorHandler = (e: ErrorEvent) => {
+      if (e.message?.includes("pannellum") || e.message?.includes("WebGL")) {
+        e.preventDefault();
+        if (!isDestroyed) {
+          setLoading(false);
+          // Yeniden dene
+          tryLoad(urlQueue.length - 1);
+        }
+      }
+    };
+    window.addEventListener("error", errorHandler);
+
+    // Cleanup fonksiyonunu ref'e kaydet
+    (pannellumRef.current as any)._cleanup = () => {
+      cleanup();
+      window.removeEventListener("error", errorHandler);
+    };
+
+    // 30sn max timeout
+    const t = setTimeout(() => {
+      if (!isDestroyed) { setLoading(false); }
+    }, 30000);
+    timers.push(t);
+
+  }, [pannellumLoaded]);
   }, [pannellumLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
+    // Önceki viewer cleanup
+    if (pannellumRef.current && (pannellumRef.current as any)._cleanup) {
+      try { (pannellumRef.current as any)._cleanup(); } catch {}
+    }
+    cancelAnimationFrame(rafRef.current);
     setActiveOda(oda);
     setSidebarOpen(false);
-    cancelAnimationFrame(rafRef.current);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `#${oda.id}`);
     }
     initViewer(oda);
-
     // Komşu odaları preload et
     oda.hotspotlar.forEach(h => {
       const hedef = config.odalar.find(o => o.id === h.hedef);
-      if (hedef?.foto) {
-        const img = new Image();
-        img.src = hedef.foto;
-      }
+      if (hedef?.foto) { const img = new Image(); img.src = hedef.foto; }
     });
   }, [initViewer, config.odalar]);
 
