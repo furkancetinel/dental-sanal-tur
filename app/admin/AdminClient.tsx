@@ -192,7 +192,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
       const thumb  = await compressImage(file, 1024, 0.75);
       await uploadVersion(thumb, aktifFirma.id, odaId, "thumb");
 
-      const medium = await compressImage(file, 2048, 0.85);
+      const medium = await compressImage(file, 2560, 0.88);
       await uploadVersion(medium, aktifFirma.id, odaId, "medium");
 
       // Full = orijinal dosyayı direkt yükle, canvas'a sokma
@@ -284,7 +284,7 @@ export default function AdminClient({ initialKlinikler }: Props) {
                   const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
                   // Thumb ve medium oluştur
                   const thumb  = await compressImage(file, 1024, 0.75);
-                  const medium = await compressImage(file, 2048, 0.85);
+                  const medium = await compressImage(file, 2560, 0.88);
                   await uploadVersion(thumb,  item.firm, item.oda, "thumb");
                   await uploadVersion(medium, item.firm, item.oda, "medium");
                   done++;
