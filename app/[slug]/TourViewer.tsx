@@ -181,19 +181,19 @@ export default function TourViewer({ config }: Props) {
     const mediumPlusUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium-plus$1");
     const fullUrl       = oda.foto;
 
-    let startUrl: string, fallbackUrl: string;
+    let startUrl: string, fallbackUrl: string, upgradeUrl: string | null = null;
     if (isLowEndDevice) {
-      // Eski/zayıf cihaz — medium, gerekirse thumb
+      // Zayıf cihaz: medium → 10sn → thumb
       startUrl = mediumUrl; fallbackUrl = thumbUrl;
     } else if (!isMobile) {
-      // Masaüstü — full, gerekirse medium-plus
+      // Masaüstü: full → 10sn → medium-plus
       startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
     } else if (effectiveType === "4g" && downlink >= 5) {
-      // Güçlü mobil hızlı bağlantı — medium-plus, gerekirse medium
-      startUrl = mediumPlusUrl; fallbackUrl = mediumUrl;
+      // Güçlü mobil: full → 10sn → medium-plus
+      startUrl = fullUrl; fallbackUrl = mediumPlusUrl;
     } else {
-      // Normal mobil — medium, gerekirse thumb
-      startUrl = mediumUrl; fallbackUrl = thumbUrl;
+      // Normal mobil: medium-plus → 10sn → medium
+      startUrl = mediumPlusUrl; fallbackUrl = mediumUrl;
     }
 
     let destroyed = false;
