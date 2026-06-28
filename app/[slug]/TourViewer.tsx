@@ -161,18 +161,27 @@ export default function TourViewer({ config }: Props) {
     const effectiveType = connection?.effectiveType || "4g";
     const downlink = connection?.downlink || 10;
 
-    // iPhone modeli tespit et — 13 ve altı medium kullan
+    // Eski/zayıf cihaz tespiti — medium kullan
     const iPhoneMatch = navigator.userAgent.match(/iPhone OS (\d+)_/);
     const iOSVersion = iPhoneMatch ? parseInt(iPhoneMatch[1]) : 99;
-    const isOlderIPhone = isMobile && /iPhone/.test(navigator.userAgent) && iOSVersion <= 15; // iOS 15 = iPhone 13 dönemi
+    const isOlderIPhone = /iPhone/.test(navigator.userAgent) && iOSVersion <= 15;
+
+    // Eski Android — düşük RAM veya eski GPU
+    const androidMatch = navigator.userAgent.match(/Android (\d+)/);
+    const androidVersion = androidMatch ? parseInt(androidMatch[1]) : 99;
+    const isWeakAndroid = /Android/.test(navigator.userAgent) && (
+      androidVersion <= 10 ||
+      /Redmi|Galaxy A[0-9]|Galaxy M|Galaxy J|Moto G|Nokia|Realme|OPPO A|Vivo Y/i.test(navigator.userAgent)
+    );
+
+    const isLowEndDevice = isOlderIPhone || isWeakAndroid;
 
     const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
     let startUrl: string, fallbackUrl: string;
-    if (isOlderIPhone) {
-      // iPhone 13 ve altı — medium ile başla, gerekirse thumb
+    if (isLowEndDevice) {
       startUrl = mediumUrl; fallbackUrl = thumbUrl;
     } else if (!isMobile) {
       startUrl = fullUrl; fallbackUrl = mediumUrl;
