@@ -213,6 +213,18 @@ export default function TourViewer({ config }: Props) {
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
+    // Cihaz tipine göre kalite stratejisi
+    const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
+    const isTablet = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent);
+
+    // Mobil: thumb → medium (max)
+    // Tablet/PC: thumb → medium → full
+    const upgradeUrls = isMobile
+      ? [{ url: mediumUrl, delay: 1500 }]
+      : isTablet
+        ? [{ url: mediumUrl, delay: 1500 }, { url: fullUrl, delay: 5000 }]
+        : [{ url: mediumUrl, delay: 1500 }, { url: fullUrl, delay: 4000 }];
+
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -295,10 +307,8 @@ export default function TourViewer({ config }: Props) {
         firstLoad = true;
         setLoading(false);
         startLoop();
-        // 2. Medium arka planda hazır olunca geç (1.5sn)
-        upgradeQuality(mediumUrl, 1500);
-        // 3. Full arka planda hazır olunca geç (4sn)
-        upgradeQuality(fullUrl, 4000);
+        // Cihaza göre kalite yükselt
+        upgradeUrls.forEach(({ url, delay }) => upgradeQuality(url, delay));
       });
       pannellumRef.current.on("error", () => {
         if (destroyed) return;
