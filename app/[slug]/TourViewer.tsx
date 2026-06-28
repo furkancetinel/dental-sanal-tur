@@ -81,6 +81,7 @@ export default function TourViewer({ config }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [webGLInfo, setWebGLInfo] = useState("");
   const [pannellumLoaded, setPannellumLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tooltip, setTooltip] = useState<string | null>(null);
@@ -151,8 +152,11 @@ export default function TourViewer({ config }: Props) {
       pannellumRef.current = null;
     }
 
-    setLoading(true);
-    setLoadError(false);
+    const testCanvas = document.createElement("canvas");
+    const gl = testCanvas.getContext("webgl") || testCanvas.getContext("experimental-webgl");
+    if (!gl) { setLoading(false); setLoadError(true); return; }
+    const maxTexture = (gl as WebGLRenderingContext).getParameter((gl as WebGLRenderingContext).MAX_TEXTURE_SIZE);
+    setWebGLInfo(`Max: ${maxTexture}px`);
     setHsPositions([]);
     smoothPositionsRef.current = [];
 
@@ -294,6 +298,7 @@ export default function TourViewer({ config }: Props) {
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
+              {webGLInfo && <p className="text-white/40 text-xs mt-2">{webGLInfo}</p>}
               <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 10s ease-in-out forwards" }} />
               </div>
