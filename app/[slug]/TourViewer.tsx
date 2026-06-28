@@ -1,21 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, memo } from "react";
-import { TourConfig, Oda, Hotspot } from "../types";
+import { TourConfig, Oda } from "../types";
 
 interface Props { config: TourConfig; }
 
-// Yaw/pitch → ekran x/y (0-1 arası)
-function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: number, hfov: number, aspect: number): { x: number; y: number; visible: boolean } {
-  const vfov = hfov / aspect;
+function worldToScreen(yaw: number, pitch: number, camYaw: number, camPitch: number, hfov: number, aspect: number) {
   let dy = yaw - camYaw;
-  // -180/+180 wrap
   if (dy > 180) dy -= 360;
   if (dy < -180) dy += 360;
   const dp = pitch - camPitch;
   const x = 0.5 + dy / hfov;
-  const y = 0.5 - dp / vfov;
-  const visible = Math.abs(dy) < hfov * 0.5 && Math.abs(dp) < vfov * 0.5;
+  const y = 0.5 - dp / (hfov / aspect);
+  const visible = Math.abs(dy) < hfov * 0.5 && Math.abs(dp) < (hfov / aspect) * 0.5;
   return { x, y, visible };
 }
 
@@ -30,29 +27,12 @@ const TIP_ROTATION: Record<string, string> = {
   asagi:     "rotate(180deg)",
 };
 
-// Kapı tipleri için özel SVG
-const KAPI_SVG_GIR = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
-  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="38" cy="30" r="2" fill="white"/>
-  <polyline points="4 30 16 23 16 37 4 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
-</svg>`;
-
-const KAPI_SVG_CIK = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
-  <line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="38" cy="30" r="2" fill="white"/>
-  <polyline points="56 30 44 23 44 37 56 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
-</svg>`;
+const KAPI_SVG_GIR = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/><line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="30" r="2" fill="white"/><polyline points="4 30 16 23 16 37 4 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/></svg>`;
+const KAPI_SVG_CIK = `<svg width="42" height="42" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="28" height="44" rx="2" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/><line x1="16" y1="8" x2="16" y2="52" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="30" r="2" fill="white"/><polyline points="56 30 44 23 44 37 56 30" stroke="white" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/></svg>`;
 
 const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoError, setLogoError, onRoom, showLogo = true }: {
-  config: TourConfig;
-  kategoriler: Record<string, Oda[]>;
-  activeOdaId: string;
-  logoError: boolean;
-  setLogoError: (v: boolean) => void;
-  onRoom: (oda: Oda) => void;
-  showLogo?: boolean;
+  config: TourConfig; kategoriler: Record<string, Oda[]>; activeOdaId: string;
+  logoError: boolean; setLogoError: (v: boolean) => void; onRoom: (oda: Oda) => void; showLogo?: boolean;
 }) {
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -70,14 +50,9 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
           <div key={kat}>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-4 pb-2">{kat}</p>
             {odalar.map((oda) => (
-              <button
-                key={oda.id}
-                onClick={() => onRoom(oda)}
+              <button key={oda.id} onClick={() => onRoom(oda)}
                 className="w-full flex items-center px-4 py-2.5 text-left text-sm transition-all"
-                style={activeOdaId === oda.id
-                  ? { background: "#f0851b", color: "#fff", fontWeight: 500 }
-                  : { color: "#4b5563" }
-                }
+                style={activeOdaId === oda.id ? { background: "#f0851b", color: "#fff", fontWeight: 500 } : { color: "#4b5563" }}
                 onMouseEnter={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = "#fff7ed"; }}
                 onMouseLeave={(e) => { if (activeOdaId !== oda.id) (e.currentTarget as HTMLElement).style.background = ""; }}
               >
@@ -87,7 +62,6 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
           </div>
         ))}
       </div>
-      {/* Renkli Turuncu360 logo — sidebar alt */}
       <div className="flex-shrink-0 flex items-center justify-center px-4 py-2 border-t border-gray-100">
         <img src="/turuncu360-renkli.svg" alt="Turuncu360" className="h-12 w-auto" />
       </div>
@@ -97,9 +71,11 @@ const Sidebar = memo(function Sidebar({ config, kategoriler, activeOdaId, logoEr
 
 export default function TourViewer({ config }: Props) {
   const viewerRef = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const pannellumRef = useRef<any>(null);
+  const psvRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
+  const activeOdaRef = useRef<Oda | null>(null);
+  const smoothPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
+  const hsPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
 
   const baslangicOda = (() => {
     if (typeof window !== "undefined") {
@@ -109,17 +85,16 @@ export default function TourViewer({ config }: Props) {
     }
     return config.odalar.find(o => o.id === config.baslangicOdaId) ?? config.odalar[0];
   })();
+
   const [activeOda, setActiveOda] = useState<Oda>(baslangicOda);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [pannellumLoaded, setPannellumLoaded] = useState(false);
+  const [psvLoaded, setPsvLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tooltip, setTooltip] = useState<string | null>(null);
-  // Hotspot pozisyonları — her frame güncellenir
   const [hsPositions, setHsPositions] = useState<{ x: number; y: number; visible: boolean }[]>([]);
 
-  const activeOdaRef = useRef(activeOda);
   activeOdaRef.current = activeOda;
 
   const kategoriler = config.odalar.reduce((acc, oda) => {
@@ -128,63 +103,49 @@ export default function TourViewer({ config }: Props) {
     return acc;
   }, {} as Record<string, Oda[]>);
 
+  // PSV yükle
   useEffect(() => {
-    if ((window as any).pannellum) { setPannellumLoaded(true); return; }
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css";
-    document.head.appendChild(link);
+    const link1 = document.createElement("link");
+    link1.rel = "stylesheet";
+    link1.href = "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.min.css";
+    document.head.appendChild(link1);
+
     const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js";
-    script.onload = () => { console.log("Pannellum loaded"); setPannellumLoaded(true); };
-    script.onerror = () => console.error("Pannellum failed to load");
+    script.src = "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.min.js";
+    script.onload = () => setPsvLoaded(true);
+    script.onerror = () => console.error("PSV load failed");
     document.head.appendChild(script);
   }, []);
-
-  const hsPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
-  const smoothPositionsRef = useRef<{ x: number; y: number; visible: boolean }[]>([]);
 
   function startLoop() {
     cancelAnimationFrame(rafRef.current);
     function loop() {
-      if (!pannellumRef.current || !viewerRef.current) { rafRef.current = requestAnimationFrame(loop); return; }
+      if (!psvRef.current || !viewerRef.current) { rafRef.current = requestAnimationFrame(loop); return; }
       try {
-        const camYaw = pannellumRef.current.getYaw();
-        const camPitch = pannellumRef.current.getPitch();
-        const hfov = pannellumRef.current.getHfov();
+        const pos = psvRef.current.getPosition();
+        const camYaw   = (pos.yaw * 180 / Math.PI);
+        const camPitch = (pos.pitch * 180 / Math.PI);
+        const fov = psvRef.current.getZoomLevel();
+        const hfov = 110 - fov * 0.7;
         const rect = viewerRef.current.getBoundingClientRect();
         const aspect = rect.width / rect.height;
-        const oda = activeOdaRef.current;
-        const newPositions = oda.hotspotlar.map(h => worldToScreen(h.yaw, h.pitch, camYaw, camPitch, hfov, aspect));
-
-        // Lerp smoothing — titreme önleme
+        const oda = activeOdaRef.current!;
+        const newPos = oda.hotspotlar.map(h => worldToScreen(h.yaw, h.pitch, camYaw, camPitch, hfov, aspect));
         const LERP = 0.18;
-        const smoothed = newPositions.map((p, i) => {
+        const smoothed = newPos.map((p, i) => {
           const prev = smoothPositionsRef.current[i];
           if (!prev) return p;
-          return {
-            x: prev.x + (p.x - prev.x) * LERP,
-            y: prev.y + (p.y - prev.y) * LERP,
-            visible: p.visible,
-          };
+          return { x: prev.x + (p.x - prev.x) * LERP, y: prev.y + (p.y - prev.y) * LERP, visible: p.visible };
         });
         smoothPositionsRef.current = smoothed;
-
-        // Sadece gerçekten değişince state güncelle
         let changed = smoothed.length !== hsPositionsRef.current.length;
         if (!changed) {
           for (let i = 0; i < smoothed.length; i++) {
-            const p = hsPositionsRef.current[i];
-            const n = smoothed[i];
-            if (!p || Math.abs(p.x - n.x) > 0.0005 || Math.abs(p.y - n.y) > 0.0005 || p.visible !== n.visible) {
-              changed = true; break;
-            }
+            const p = hsPositionsRef.current[i], n = smoothed[i];
+            if (!p || Math.abs(p.x - n.x) > 0.0005 || Math.abs(p.y - n.y) > 0.0005 || p.visible !== n.visible) { changed = true; break; }
           }
         }
-        if (changed) {
-          hsPositionsRef.current = smoothed;
-          setHsPositions([...smoothed]);
-        }
+        if (changed) { hsPositionsRef.current = smoothed; setHsPositions([...smoothed]); }
       } catch {}
       rafRef.current = requestAnimationFrame(loop);
     }
@@ -192,186 +153,89 @@ export default function TourViewer({ config }: Props) {
   }
 
   const initViewer = useCallback((oda: Oda) => {
-    if (!pannellumLoaded || !viewerRef.current) return;
-    const win = window as any;
-    if (!win.pannellum) return;
+    if (!psvLoaded || !viewerRef.current) return;
+    const PSV = (window as any).PhotoSphereViewer?.Viewer;
+    if (!PSV) return;
 
     cancelAnimationFrame(rafRef.current);
-    if (pannellumRef.current) {
-      if ((pannellumRef.current as any)._cleanup) {
-        try { (pannellumRef.current as any)._cleanup(); } catch {}
-      }
-      try { pannellumRef.current.destroy(); } catch {}
-      pannellumRef.current = null;
-    }
+    if (psvRef.current) { try { psvRef.current.destroy(); } catch {} psvRef.current = null; }
 
     setLoading(true);
     setLoadError(false);
     setHsPositions([]);
     smoothPositionsRef.current = [];
 
+    const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
+    const connection = (navigator as any).connection;
+    const effectiveType = connection?.effectiveType || "4g";
+    const downlink = connection?.downlink || 10;
+
     const thumbUrl  = oda.foto.replace(/(\.[^.]+)$/, "-thumb$1");
     const mediumUrl = oda.foto.replace(/(\.[^.]+)$/, "-medium$1");
     const fullUrl   = oda.foto;
 
-    // Cihaz + network tipine göre kalite stratejisi
-    const isMobile = /iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-    const effectiveType = connection?.effectiveType || "4g";
-    const downlink = connection?.downlink || 10; // Mbps, bilinmiyorsa iyi say
-
-    let startUrl: string;
-    let fallbackUrl: string;
-
+    let startUrl: string, fallbackUrl: string;
     if (!isMobile) {
-      // Masaüstü her zaman full
-      startUrl = fullUrl;
-      fallbackUrl = mediumUrl;
+      startUrl = fullUrl; fallbackUrl = mediumUrl;
     } else if (effectiveType === "4g" && downlink >= 5) {
-      // Mobil hızlı bağlantı → full
-      startUrl = fullUrl;
-      fallbackUrl = mediumUrl;
-    } else if (effectiveType === "4g" || effectiveType === "3g") {
-      // Mobil normal → medium
-      startUrl = mediumUrl;
-      fallbackUrl = thumbUrl;
+      startUrl = fullUrl; fallbackUrl = mediumUrl;
     } else {
-      // Yavaş bağlantı → thumb
-      startUrl = thumbUrl;
-      fallbackUrl = thumbUrl;
+      startUrl = mediumUrl; fallbackUrl = thumbUrl;
     }
 
     let destroyed = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    function cleanup() {
-      destroyed = true;
-      timers.forEach(t => clearTimeout(t));
-    }
-
-    // Pannellum'u başlat
-    function createViewer(url: string) {
+    function loadPSV(url: string) {
       if (destroyed || !viewerRef.current) return;
       try {
-        if (pannellumRef.current) {
-          try { pannellumRef.current.destroy(); } catch {}
-          pannellumRef.current = null;
-        }
-        pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
-          type: "equirectangular",
+        if (psvRef.current) { try { psvRef.current.destroy(); } catch {} psvRef.current = null; }
+        psvRef.current = new PSV({
+          container: viewerRef.current,
           panorama: url,
-          autoLoad: true,
-          yaw: oda.baslangicYaw ?? 0,
-          pitch: oda.baslangicPitch ?? 0,
-          hfov: oda.baslangicHfov ?? 100,
-          minHfov: 10,
-          maxHfov: 170,
-          showZoomCtrl: false,
-          showFullscreenCtrl: false,
-          showControls: false,
-          hotSpots: [],
+          defaultYaw: (oda.baslangicYaw ?? 0) * Math.PI / 180,
+          defaultPitch: (oda.baslangicPitch ?? 0) * Math.PI / 180,
+          defaultZoomLvl: 50,
+          navbar: false,
+          loadingImg: null,
+          touchmoveTwoFingers: false,
+          mousewheelCtrlKey: false,
+        });
+        psvRef.current.addEventListener("ready", () => {
+          if (destroyed) return;
+          setLoading(false);
+          startLoop();
+        });
+        psvRef.current.addEventListener("error", () => {
+          if (destroyed) return;
+          if (url !== fallbackUrl) loadPSV(fallbackUrl);
+          else { setLoading(false); setLoadError(true); }
         });
       } catch (e) {
         if (!destroyed) { setLoading(false); setLoadError(true); }
       }
     }
 
-    // Arka planda fotoğraf yükle, hazır olunca pannellum'u yenile
-    function upgradeQuality(url: string, delay: number) {
-      const t = setTimeout(() => {
-        if (destroyed) return;
-        // Arka planda Image() ile yükle — görünmez
-        const img = new Image();
-        img.onload = () => {
-          if (destroyed || !pannellumRef.current) return;
-          // Mevcut kamera pozisyonunu kaydet
-          try {
-            const curYaw   = pannellumRef.current.getYaw();
-            const curPitch = pannellumRef.current.getPitch();
-            const curHfov  = pannellumRef.current.getHfov();
-            // Viewer'ı yeni URL ile yeniden başlat — kamera aynı kalır
-            try { pannellumRef.current.destroy(); } catch {}
-            pannellumRef.current = null;
-            pannellumRef.current = win.pannellum.viewer(viewerRef.current, {
-              type: "equirectangular",
-              panorama: url,
-              autoLoad: true,
-              yaw: curYaw,
-              pitch: curPitch,
-              hfov: curHfov,
-              minHfov: 10,
-              maxHfov: 170,
-              showZoomCtrl: false,
-              showFullscreenCtrl: false,
-              showControls: false,
-              hotSpots: [],
-            });
-          } catch {}
-        };
-        img.src = url;
-      }, delay);
-      timers.push(t);
-    }
+    loadPSV(startUrl);
 
-    // Başlangıç kalitesiyle başlat
-    createViewer(startUrl);
-
-    if (pannellumRef.current) {
-      let firstLoad = false;
-
-      pannellumRef.current.on("load", () => {
-        if (destroyed || firstLoad) return;
-        firstLoad = true;
-        setLoading(false);
-        startLoop();
-      });
-
-      pannellumRef.current.on("error", () => {
-        if (destroyed || firstLoad) return;
-        firstLoad = true;
-        createViewer(fallbackUrl);
-        if (pannellumRef.current) {
-          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
-          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
-        }
-      });
-
-      // 10sn içinde yüklenmezse alt kaliteye geç
-      const fallbackTimer = setTimeout(() => {
-        if (destroyed || firstLoad) return;
-        firstLoad = true;
-        createViewer(fallbackUrl);
-        if (pannellumRef.current) {
-          pannellumRef.current.on("load", () => { setLoading(false); startLoop(); });
-          pannellumRef.current.on("error", () => { setLoading(false); setLoadError(true); });
-        }
-      }, 10000);
-      timers.push(fallbackTimer);
-    }
-
-    // 30sn fallback
-    const t = setTimeout(() => { if (!destroyed) setLoading(false); }, 30000);
+    // 10sn timeout
+    const t = setTimeout(() => {
+      if (!destroyed && loading) loadPSV(fallbackUrl);
+    }, 10000);
     timers.push(t);
 
-    if (pannellumRef.current) {
-      (pannellumRef.current as any)._cleanup = cleanup;
-    }
-
-  }, [pannellumLoaded]);
+    return () => { destroyed = true; timers.forEach(clearTimeout); };
+  }, [psvLoaded]);
 
   const goRoomCb = useCallback((oda: Oda) => {
-    // Önceki viewer cleanup
-    if (pannellumRef.current && (pannellumRef.current as any)._cleanup) {
-      try { (pannellumRef.current as any)._cleanup(); } catch {}
+    if (psvRef.current && (psvRef.current as any)._cleanup) {
+      try { (psvRef.current as any)._cleanup(); } catch {}
     }
     cancelAnimationFrame(rafRef.current);
     setActiveOda(oda);
     setSidebarOpen(false);
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `#${oda.id}`);
-    }
+    if (typeof window !== "undefined") window.history.replaceState(null, "", `#${oda.id}`);
     initViewer(oda);
-    // Komşu odaları preload et
     oda.hotspotlar.forEach(h => {
       const hedef = config.odalar.find(o => o.id === h.hedef);
       if (hedef?.foto) { const img = new Image(); img.src = hedef.foto; }
@@ -379,16 +243,15 @@ export default function TourViewer({ config }: Props) {
   }, [initViewer, config.odalar]);
 
   useEffect(() => {
-    if (pannellumLoaded) initViewer(activeOda);
+    if (psvLoaded) initViewer(activeOda);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [pannellumLoaded]);
+  }, [psvLoaded]);
 
   return (
     <div style={{ fontFamily: "Poppins, sans-serif", position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#111" }}>
-
-      {/* Topbar — sadece mobil */}
+      {/* Topbar mobil */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0 z-10" style={{ minHeight: 56 }}>
-        <button className="w-8 h-8 flex flex-col items-center justify-center gap-1.5 flex-shrink-0" onClick={() => setSidebarOpen(v => !v)}>
+        <button className="w-8 h-8 flex flex-col items-center justify-center gap-1.5" onClick={() => setSidebarOpen(v => !v)}>
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
           <span className="block w-5 h-0.5 bg-gray-600 rounded" />
@@ -396,16 +259,15 @@ export default function TourViewer({ config }: Props) {
         <div className="absolute left-1/2 -translate-x-1/2">
           {!logoError && config.logo ? (
             <img src={config.logo} alt={config.klinikAdi} className="h-11 w-auto object-contain max-w-[170px]" onError={() => setLogoError(true)} />
-          ) : (
-            <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>
-          )}
+          ) : <span className="font-semibold text-gray-800 text-sm">{config.klinikAdi}</span>}
         </div>
         <div className="w-8" />
       </div>
+
       <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
-        {/* Desktop Sidebar — memo ile RAF re-render'dan korunuyor */}
+        {/* Desktop Sidebar */}
         <div className="hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-100" style={{ width: 208, overflow: "hidden", zIndex: 10 }}>
-          <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} />
+          <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={true} />
         </div>
 
         {/* Mobile Sidebar */}
@@ -413,118 +275,80 @@ export default function TourViewer({ config }: Props) {
           <div className="md:hidden absolute inset-0 z-30 flex">
             <div className="w-64 bg-white flex flex-col shadow-2xl" style={{ overflow: "hidden" }}>
               <div className="flex items-center justify-end px-4 pt-4 pb-2 flex-shrink-0">
-                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+                <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
               </div>
-              <div className="flex-1 overflow-y-auto min-h-0">
-                <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={false} />
-              </div>
+              <Sidebar config={config} kategoriler={kategoriler} activeOdaId={activeOda.id} logoError={logoError} setLogoError={setLogoError} onRoom={goRoomCb} showLogo={false} />
             </div>
             <div className="flex-1 bg-black/40" onClick={() => setSidebarOpen(false)} />
           </div>
         )}
 
-        {/* Viewer — kalan alanı tam doldurur */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#1a1a1a" }}>
-          {/* Loading */}
-          {loadError && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 text-white px-8 text-center">
-              <p className="text-4xl mb-4">⚠️</p>
-              <p className="font-semibold text-lg mb-2">Fotoğraf yüklenemedi</p>
-              <p className="text-white/60 text-sm mb-6">İnternet bağlantınızı kontrol edin</p>
-              <button
-                onClick={() => { setLoadError(false); initViewer(activeOda); }}
-                className="px-6 py-2.5 rounded-xl text-white font-medium text-sm"
-                style={{ background: "#f0851b" }}
-              >
-                Tekrar Dene
-              </button>
-            </div>
-          )}
+        {/* Viewer */}
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", minWidth: 0, minHeight: 0, background: "#111" }}>
           {loading && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center" style={{ background: "#f0851b" }}>
               <div className="w-12 h-12 rounded-full animate-spin mb-4" style={{ borderWidth: 3, borderStyle: "solid", borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
               <p className="text-white font-semibold text-base">{activeOda?.baslik ?? ""}</p>
               <p className="text-white/70 text-sm mt-1">Yükleniyor...</p>
               <div className="mt-6 w-48 h-1 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 12s ease-in-out forwards" }} />
+                <div className="h-full bg-white/70 rounded-full" style={{ animation: "progress-bar 10s ease-in-out forwards" }} />
               </div>
             </div>
           )}
 
-          {/* Pannellum container */}
+          {loadError && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 text-white px-8 text-center">
+              <p className="text-4xl mb-4">⚠️</p>
+              <p className="font-semibold text-lg mb-2">Fotoğraf yüklenemedi</p>
+              <p className="text-white/60 text-sm mb-6">İnternet bağlantınızı kontrol edin</p>
+              <button onClick={() => { setLoadError(false); initViewer(activeOda); }} className="px-6 py-2.5 rounded-xl text-white font-medium text-sm" style={{ background: "#f0851b" }}>
+                Tekrar Dene
+              </button>
+            </div>
+          )}
+
           <div ref={viewerRef} className="w-full h-full" />
 
-          {/* Hotspot overlay — pannellum'dan bağımsız React katmanı */}
-          <div ref={overlayRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+          {/* Hotspot overlay */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {!loading && activeOda.hotspotlar.map((h, i) => {
               const pos = hsPositions[i];
               if (!pos || !pos.visible) return null;
               const tip = h.tip || "ilerleme";
-
-              // Zemine paralel ok — pitch ne kadar negatifse o kadar yassı
-              // scaleY: pitch=0 → 0.3 (biraz yassı), pitch=-90 → 0.08 (çok yassı)
+              const isKapi = tip === "kapi-gir" || tip === "kapi" || tip === "kapi-cik";
               const scaleY = Math.max(0.08, 0.3 + h.pitch / 120);
               const rotZ = parseFloat((TIP_ROTATION[tip] || "rotate(0deg)").replace("rotate(", "").replace("deg)", ""));
-
               return (
-                <div
-                  key={i}
-                  className="absolute pointer-events-auto"
-                  style={{
-                    left: `${pos.x * 100}%`,
-                    top: `${pos.y * 100}%`,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                  onMouseEnter={() => setTooltip(h.baslik)}
-                  onMouseLeave={() => setTooltip(null)}
-                  onClick={() => {
-                    const hedef = config.odalar.find(o => o.id === h.hedef);
-                    if (hedef) goRoomCb(hedef);
-                  }}
+                <div key={i} className="absolute pointer-events-auto"
+                  style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%`, transform: "translate(-50%, -50%)" }}
+                  onMouseEnter={() => setTooltip(h.baslik)} onMouseLeave={() => setTooltip(null)}
+                  onClick={() => { const hedef = config.odalar.find(o => o.id === h.hedef); if (hedef) goRoomCb(hedef); }}
                 >
                   {tooltip === h.baslik && (
-                    <div
-                      className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-white text-xs font-medium px-3 py-1.5 rounded-lg pointer-events-none"
-                      style={{ background: "rgba(0,0,0,0.75)", fontFamily: "Poppins, sans-serif" }}
-                    >
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-white text-xs font-medium px-3 py-1.5 rounded-lg pointer-events-none" style={{ background: "rgba(0,0,0,0.75)" }}>
                       {h.baslik}
                     </div>
                   )}
-                  {/* Kapı tipleri için özel ikon */}
-                  {(tip === "kapi-gir" || tip === "kapi" || tip === "kapi-cik") ? (
-                    <div
-                      className="cursor-pointer"
-                      style={{
-                        filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.8))",
-                      }}
-                      dangerouslySetInnerHTML={{ __html: tip === "kapi-cik" ? KAPI_SVG_CIK : KAPI_SVG_GIR }}
-                    />
+                  {isKapi ? (
+                    <div className="cursor-pointer" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.8))" }}
+                      dangerouslySetInnerHTML={{ __html: tip === "kapi-cik" ? KAPI_SVG_CIK : KAPI_SVG_GIR }} />
                   ) : (
-                  <div
-                    className="flex flex-col items-center cursor-pointer"
-                    style={{
-                      transform: `rotate(${rotZ}deg) scaleY(${scaleY})`,
-                      filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))",
-                    }}
-                  >
-                    <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}
-                    >
-                      <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
-                    </svg>
-                    <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginTop: -22, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}
-                    >
-                      <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
+                    <div className="flex flex-col items-center cursor-pointer"
+                      style={{ transform: `rotate(${rotZ}deg) scaleY(${scaleY})`, filter: "drop-shadow(0 1px 6px rgba(0,0,0,0.8))" }}>
+                      <svg width="40" height="52" viewBox="0 0 40 52" fill="none" style={{ animation: "hs-arrow-1 1.2s ease-in-out infinite" }}>
+                        <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+                      </svg>
+                      <svg width="40" height="52" viewBox="0 0 40 52" fill="none" style={{ marginTop: -22, animation: "hs-arrow-2 1.2s ease-in-out infinite" }}>
+                        <polyline points="4 44 20 8 36 44" stroke="white" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
 
-          {/* Oda badge — sağ alt */}
+          {/* Oda badge */}
           {!loading && (
             <div className="absolute bottom-14 right-4 sm:bottom-5 sm:right-5 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2.5 text-white pointer-events-none z-10">
               <p className="text-sm font-semibold leading-tight">{activeOda.baslik}</p>
@@ -542,24 +366,10 @@ export default function TourViewer({ config }: Props) {
       </div>
 
       <style>{`
-        .pnlm-container { background: #1a1a1a !important; }
-        @keyframes progress-bar {
-          0% { width: 0%; }
-          30% { width: 40%; }
-          70% { width: 75%; }
-          90% { width: 90%; }
-          100% { width: 95%; }
-        }
-        @keyframes hs-arrow-1 {
-          0%, 100% { opacity: 0.2; transform: translateY(4px); }
-          50% { opacity: 0.5; transform: translateY(0px); }
-        }
-        @keyframes hs-arrow-2 {
-          0%, 100% { opacity: 0.7; transform: translateY(4px); }
-          50% { opacity: 1; transform: translateY(0px); }
-        }
-        .pnlm-load-box { display: none !important; }
-        .pnlm-ui .pnlm-controls-container { display: none !important; }
+        @keyframes progress-bar { 0% { width: 0%; } 90% { width: 95%; } }
+        @keyframes hs-arrow-1 { 0%, 100% { opacity: 0.2; transform: translateY(4px); } 50% { opacity: 0.5; transform: translateY(0px); } }
+        @keyframes hs-arrow-2 { 0%, 100% { opacity: 0.7; transform: translateY(4px); } 50% { opacity: 1; transform: translateY(0px); } }
+        .psv-container { background: #111 !important; }
       `}</style>
     </div>
   );
