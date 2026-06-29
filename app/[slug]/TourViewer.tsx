@@ -155,6 +155,8 @@ export default function TourViewer({ config }: Props) {
     const gl = testCanvas.getContext("webgl") || testCanvas.getContext("experimental-webgl");
     if (!gl) { setLoading(false); setLoadError(true); return; }
 
+    setLoading(true);
+    setLoadError(false);
     setHsPositions([]);
     smoothPositionsRef.current = [];
 
